@@ -1,29 +1,27 @@
 const chip8 = Object.create(null);
 
+chip8.paused = false;
+
+chip8.debug = false;
+
+chip8.quirks = Object.create(null);
+chip8.quirks.useVYinShifts = false;
+
 chip8.registers = (() => {
   const ns = Object.create(null);
   
   // General purpose registers V0 ~ VF
   ns.V = new Uint8Array(16);
   ns.I = 0;
-  // const _I = new Uint8Array(1);
-  // Object.defineProperty(ns, 'I', {
-  //   get: function() {
-  //     return _I[0];
-  //   },
-  //   set:function(value) {
-  //     _I[0] = value;
-  //   },
-  //   enumerable: true,
-  //   configurable: false,
-  // }); 
-  
   return ns;
 })();
 
 chip8.stack = (() => {
   // @todo Implement a simplified stack
+  const _stack = [];
   const ns = Object.create(null);
+  ns.push = _stack.push;
+  ns.pop = _stack.pop;
   return ns;
 })();
 
@@ -137,21 +135,7 @@ chip8.timer = (() => {
 chip8.cpu = (() => {
   const ns = Object.create(null);
   const fetched = new Uint8Array(2);
-  ns.PC = 0; 
-  // const _PC = new Uint8Array(1);
-  // Object.defineProperty(ns, 'PC', {
-  //   get: function() {
-  //     return _PC[0];
-  //   },
-  //   set: function(value) {
-  //     console.log("Setting PC value to", value);
-  //     _PC[0] = value;
-  //     console.log(_PC[0]);
-  //   },
-  //   enumerable: true,
-  //   configurable: false,
-  // }); 
-
+  ns.PC = 0;
   ns.operations = Object.create(null);
 
   ns.operations.clearScreen = () => {
@@ -162,12 +146,40 @@ chip8.cpu = (() => {
     chip8.cpu.PC = address;
   };
 
-  ns.operations.setRegister = (register, value) => {
+  ns.operations.setRegVal = (register, value) => {
     chip8.registers.V[register] = value;
   };
 
-  ns.operations.add = (register, value) => {
+  ns.operations.setRegReg = (registerX, registerY) => {
+    chip8.registers.V[registerX] = chip8.registers.V[registerY]
+  };
+
+  ns.operations.addWithoutCarry = (register, value) => {
     chip8.registers.V[register] += value;
+  };
+
+  ns.operations.addWithCarry = (registerX, registerY) => {
+    const sum = chip8.registers.V[registerX] + chip8.registers.V[registerY];
+    chip8.registers.V[registerX] = sum;
+    chip8.registers.V[0xF] = (sum > 255) & 1;
+  };
+
+  ns.operations.subtract = (registerX, registerY, negate = false) => {
+    const difference = chip8.registers.V[registerX] - chip8.registers.V[registerY] * (negate ? -1 : 1);
+    chip8.registers.V[registerX] = difference;
+    chip8.registers.V[0xF] = (difference >= 0) & 1;
+  };
+
+  ns.operations.binOR = (registerX, registerY) => {
+    chip8.registers.V[registerX] |= chip8.registers.V[registerY];
+  };
+
+  ns.operations.binAND = (registerX, registerY) => {
+    chip8.registers.V[registerX] &= chip8.registers.V[registerY];
+  };
+
+  ns.operations.binXOR = (registerX, registerY) => {
+    chip8.registers.V[registerX] ^= chip8.registers.V[registerY];
   };
 
   ns.operations.setIndex = (value) => {
@@ -184,44 +196,167 @@ chip8.cpu = (() => {
     chip8.display.draw(root_x % w, root_y % h, spriteData);
   };
 
+  ns.operations.callSubroutine = (address) => {
+    chip8.stack.push(chip8.cpu.PC);
+    chip8.cpu.PC = address;
+  };
+
+  ns.operations.returnFromSubroutine = () => {
+    chip8.cpu.PC = chip8.stack.pop();
+  };
+
+  ns.operations.skipEqualVal = (register, value) => {
+    if (chip8.registers.V[register] === value) {
+      chip8.cpu.PC += 2;
+    }
+  };
+
+  ns.operations.skipNotEqualVal = (register, value) => {
+    if (chip8.registers.V[register] !== value) {
+      chip8.cpu.PC += 2;
+    }
+  };
+
+  ns.operations.skipEqualReg = (registerX, registerY) => {
+    if (chip8.registers.V[registerX] === chip8.registers.V[registerY]) {
+      chip8.cpu.PC += 2;
+    }
+  };
+
+  ns.operations.skipNotEqualReg = (registerX, registerY) => {
+    if (chip8.registers.V[registerX] !== chip8.registers.V[registerY]) {
+      chip8.cpu.PC += 2;
+    }
+  };
+
+  ns.operations.shiftRight = (registerX, registerY) => {
+    if (chip8.quirks.useVYinShifts) {
+      chip8.registers.V[registerX] = chip8.registers.V[registerY];
+    }
+    chip8.registers.V[0xF] = chip8.registers.V[registerX] & 1;
+    chip8.registers.V[registerX] = chip8.registers.V[registerX] >> 1;
+  };
+
+  ns.operations.shiftLeft = (registerX, registerY) => {
+    if (chip8.quirks.useVYinShifts) {
+      chip8.registers.V[registerX] = chip8.registers.V[registerY];
+    }
+    chip8.registers.V[0xF] = (chip8.registers.V[registerX] >> 7) & 1;
+    chip8.registers.V[registerX] = chip8.registers.V[registerX] << 1;
+  };
+
   ns.fetch = () => {
     // Read 2 bytes, and increment the PC by 2
     fetched[0] = chip8.memory[chip8.cpu.PC];
     fetched[1] = chip8.memory[chip8.cpu.PC + 1];
-    console.log('fetched', `0x${fetched.toHex()}`, 'at PC', chip8.cpu.PC);
+    chip8.debug && console.log('fetched', `0x${fetched.toHex()}`, 'at PC', chip8.cpu.PC);
     chip8.cpu.PC += 2;
+
+    return fetched.toHex();
   };
 
-  ns.decode = () => {
+  ns.decode = (instruction) => {
     // Switch-case statement to understand what needs to be done
-    const opcode = fetched.toHex();
+
+    const X = Number(`0x${instruction[1]}`);
+    const Y = Number(`0x${instruction[2]}`);
+    const N = Number(`0x${instruction[3]}`);
+    const NN = Number(`0x${instruction.slice(2)}`);
+    const NNN = Number(`0x${instruction.slice(1)}`);
+
     let op = () => {}; // nop
-    switch (opcode[0]) {
+    switch (instruction[0]) {
       case '0':
-        if (opcode === '00e0') {
-          console.log('Clearing screen');
-          op = () => chip8.cpu.operations.clearScreen();
+        switch (instruction.slice(1)) {
+          case '0e0':
+            chip8.debug && console.log('Clearing screen');
+            op = () => chip8.cpu.operations.clearScreen();
+            break;
+          case '0ee':
+            chip8.debug && console.log('Returning from subroutine to', `0x${chip8.stack[chip8.stack.length - 1].toString(16)}`);
+            op = () => chip8.cpu.operations.returnFromSubroutine();
+            break;
         }
         break;
       case '1':
-        console.log('Jumping to address', (`0x${opcode.slice(1)}`));
-        op = () => chip8.cpu.operations.jump(Number(`0x${opcode.slice(1)}`));
+        chip8.debug && console.log('Jumping to address', (`0x${NNN.toString(16)}`));
+        op = () => chip8.cpu.operations.jump(NNN);
+        break;
+      case '2':
+        chip8.debug && console.log('Jumping to subroutine at', (`0x${NNN.toString(16)}`));
+        op = () => chip8.cpu.operations.callSubroutine(NNN);
+        break;
+      case '3':
+        chip8.debug && console.log('Will skip next instruction if register', X, 'equals', NN);
+        op = () => chip8.cpu.operations.skipEqualVal(X, NN);
+        break;
+      case '4':
+        chip8.debug && console.log('Will skip next instruction if register', X, 'not equals', NN);
+        op = () => chip8.cpu.operations.skipNotEqualVal(X, NN);
+        break;
+      case '5':
+        chip8.debug && console.log('Will skip next instruction if register', X, 'equals register', Y);
+        op = () => chip8.cpu.operations.skipEqualReg(X, Y);
+        break;
+      case '9':
+        chip8.debug && console.log('Will skip next instruction if register', X, 'not equals register', Y);
+        op = () => chip8.cpu.operations.skipNotEqualReg(X, Y);
         break;
       case '6':
-        console.log('Setting register', Number(`0x${opcode.slice(1, 2)}`), 'to value', Number(`0x${opcode.slice(2)}`));
-        op = () => chip8.cpu.operations.setRegister(Number(`0x${opcode.slice(1, 2)}`), Number(`0x${opcode.slice(2)}`));
+        chip8.debug && console.log('Setting register', X, 'to value', NN);
+        op = () => chip8.cpu.operations.setRegVal(X, NN);
         break;
       case '7':
-        console.log('Adding to register', Number(`0x${opcode.slice(1, 2)}`), 'a value of', Number(`0x${opcode.slice(2)}`));
-        op = () => chip8.cpu.operations.add(Number(`0x${opcode.slice(1, 2)}`), Number(`0x${opcode.slice(2)}`));
+        chip8.debug && console.log('Adding to register', X, 'a value of', NN);
+        op = () => chip8.cpu.operations.addWithoutCarry(X, NN);
+        break;
+      case '8':
+        switch (N) {
+          case 0x0:
+            chip8.debug && console.log('Setting value of register', X, 'to value of register', Y);
+            op = () => chip8.cpu.operations.setRegReg(X, Y);
+            break;
+          case 0x1:
+            chip8.debug && console.log('Binary OR between registers', X, 'and', Y);
+            op = () => chip8.cpu.operations.binOR(X, Y);
+            break;
+          case 0x2:
+            chip8.debug && console.log('Binary AND between registers', X, 'and', Y);
+            op = () => chip8.cpu.operations.binAND(X, Y);
+            break;
+          case 0x3:
+            chip8.debug && console.log('Binary XOR between registers', X, 'and', Y);
+            op = () => chip8.cpu.operations.binXOR(X, Y);
+            break;
+          case 0x4:
+            chip8.debug && console.log('Adding values between registers', X, 'and', Y, 'with carry');
+            op = () => chip8.cpu.operations.addWithCarry(X, Y);
+            break;
+          case 0x5:
+            chip8.debug && console.log('Subtracting value of register', Y, 'from', X);
+            op = () => chip8.cpu.operations.subtract(X, Y);
+            break;
+          case 0x7:
+            chip8.debug && console.log('Subtracting value of register', X, 'from', Y);
+            op = () => chip8.cpu.operations.subtract(X, Y, true);
+            break;
+          case 0x6:
+            chip8.debug && console.log('Shifting right, using registers', X, 'and', Y);
+            op = () => chip8.cpu.operations.shiftRight(X, Y);
+            break;
+          case 0xE:
+            chip8.debug && console.log('Shifting left, using registers', X, 'and', Y);
+            op = () => chip8.cpu.operations.shiftLeft(X, Y);
+            break;
+        } 
         break;
       case 'a':
-        console.log('Setting I to', Number(`0x${opcode.slice(1)}`));
-        op = () => chip8.cpu.operations.setIndex(Number(`0x${opcode.slice(1)}`));
+        chip8.debug && console.log('Setting I to', `0x${NNN.toString(16)}`);
+        op = () => chip8.cpu.operations.setIndex(NNN);
         break;
       case 'd':
-        console.log('Drawing at', (`0x${opcode.slice(1, 2)}`), ',', (`0x${opcode.slice(2, 3)}`), '- a sprite of', `0x${opcode.slice(3)}`, 'rows');
-        op = () => chip8.cpu.operations.draw(Number(`0x${opcode.slice(1, 2)}`), Number(`0x${opcode.slice(2, 3)}`), Number(`0x${opcode.slice(3)}`));
+        chip8.debug && console.log('Drawing at', X, ',', Y, '- a sprite of', N, 'rows');
+        op = () => chip8.cpu.operations.draw(X, Y, N);
         break;
     }
     // Pass on the data/instruction to `execute`
@@ -247,6 +382,8 @@ chip8.romdata = Object.create(null);
 chip8.initRomReader = () => {
   const input = document.querySelector("input#romupload");
   const readButton = document.querySelector("button#readrom");
+  const pauseButton = document.querySelector("button#pause");
+
   window.readButton = readButton;
 
   readButton.addEventListener('click', () => {
@@ -273,6 +410,11 @@ chip8.initRomReader = () => {
     };
 
     reader.readAsArrayBuffer(file);
+  });
+
+  pauseButton.addEventListener('click', () => {
+    chip8.paused = !chip8.paused;
+    pauseButton.innerHTML = chip8.paused ? 'Resume' : 'Pause';  
   });
 }
 
@@ -309,17 +451,37 @@ chip8.loadRom = () => {
 
 chip8.initRomReader();
 
-chip8.run = async () => {
+chip8.run = () => {
+  if (chip8.paused) {
+    chip8.paused = false;
+    document.querySelector("button#pause").innerHTML = 'Pause';
+  }
+
+  chip8.memoryUtils.populateFonts();
   chip8.loadRom();
-  let op;
+
+  let fetchedInstruction;
+  let decodedOperation;
+
   chip8.cpu.PC = Number(0x200);
-  console.log('PC:', chip8.cpu.PC);
   chip8.display.clear();
-  const mainLoop = async() => {
-    chip8.cpu.fetch();
-    op = chip8.cpu.decode();
-    chip8.cpu.execute(op);
-    requestAnimationFrame(mainLoop);
+  let startTime = NaN;
+  const mainLoop = (ts) => {
+    if (chip8.paused) {
+      requestAnimationFrame(mainLoop);
+    }
+    else if (ts - startTime < 16.667) {
+      // Will make instructions run at roughly 60Hz
+      requestAnimationFrame(mainLoop);
+    }
+    else {
+      chip8.debug && console.log('Milliseconds elapsed since last FDE loop:', ts - startTime);
+      startTime = ts;
+      fetchedInstruction = chip8.cpu.fetch();
+      decodedOperation = chip8.cpu.decode(fetchedInstruction);
+      chip8.cpu.execute(decodedOperation);
+      requestAnimationFrame(mainLoop);
+    }
   }
   requestAnimationFrame(mainLoop);
 };
