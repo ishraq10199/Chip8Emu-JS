@@ -30,10 +30,13 @@ chip8.run = () => {
   chip8.initCPU();
   chip8.display.clear();
   let mainLoopLastTime = performance.now();
+  const frameInterval = 6;
+  // const frameInterval = 16.67;
   cancelAnimationFrame(chip8.mainLoopFrame);
   const mainLoop = () => {
-    if (!chip8.paused && performance.now() - mainLoopLastTime >= 16.67) {
+    if (!chip8.paused && performance.now() - mainLoopLastTime >= frameInterval) {
       chip8.timer.decrement();
+      chip8.sound.play(); 
       chip8.input.makeLastInputStale();
       for (let i = 0; i < 11; i++) {
         fetchedInstruction = chip8.cpu.fetch();

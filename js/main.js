@@ -8,3 +8,5 @@ import './modules/timer.js';
 import './modules/cpu.js';
 import './modules/rom.js';
 import './modules/utils.js';
+import './modules/sound.js';
+import './modules/ui.js';

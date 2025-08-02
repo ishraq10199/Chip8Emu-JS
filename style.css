@@ -1,0 +1,15 @@
+.scrollable {
+    border: 2px solid black;
+    max-height: 600px;
+    overflow: scroll;
+    width: 200px;
+}
+
+.scrollable .selected {
+    background: black;
+    color: white;
+}
+
+.scrollable .selectable {
+    cursor: pointer;
+}
