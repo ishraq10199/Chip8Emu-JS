@@ -1,27 +1,172 @@
-const scrollableDiv = document.querySelector('#chip8code');
+chip8.ui = (() => {
+    const ns = Object.create(null);
+    const scrollableDiv = document.querySelector('#chip8code');
 
-const createSelectableItem = (id) => {
-    const item = document.createElement('div');
-    item.innerHTML = `item ${id}`;
-    item.id = `item-${id}`;
-    return item;
-}
-for (let i = 0; i < 100; i++) {
-    scrollableDiv.append(createSelectableItem(i));
-}
+    let registersRendered = false;
+    const registerContainer = document.querySelector('.chip8-registers');
+    const registerEls = [];
 
-const selectItem = (id, skipScroll = false) => {
-    const previouslySelected = scrollableDiv.querySelector('.selected');
-    if (previouslySelected) {
-        previouslySelected.classList.remove('selected');
-    }
-    const selectedItem = scrollableDiv.querySelector(`#item-${id}`);
-    if (selectedItem) {
-        if (!skipScroll) {
-            selectedItem.scrollIntoView();
+    let inputRendered = false;
+    const inputContainer = document.querySelector('.chip8-input');
+    const inputEls = [];
+
+    const stackContainer = document.querySelector('.chip8-stack');
+    const stackEls = [];
+
+    const tacContainer = document.querySelector('.chip8-timers-and-counters');
+    let tacRendered = false;
+    const tacEls = Object.create(null);
+
+    const createTACItem = (id) => {
+        const tacItem = document.createElement('div');
+        tacItem.classList.add('tac-item');
+        tacItem.id = id;
+        const tacLabel = document.createElement('div');
+        tacLabel.classList.add('label');
+        tacLabel.innerHTML = id.toUpperCase();
+        tacItem.append(tacLabel);
+        const tacValue = document.createElement('div');
+        tacValue.classList.add('value');
+        tacValue.innerHTML = 0;
+        tacItem.append(tacValue);
+        return tacItem;
+    };
+
+    const createRegisterItem = (id) => {
+        const regItem = document.createElement('div');
+        const hexId = id.toString(16).toUpperCase();
+        const regLabel = document.createElement('div');
+        regLabel.innerHTML = `V${hexId}`
+        const regValue = document.createElement('div');
+        regLabel.classList.add('label');
+        regValue.classList.add('value');
+        regItem.classList.add('register-item');
+        regItem.id = `register-v${hexId}`;
+        regItem.append(regLabel);
+        regItem.append(regValue);
+        return regItem;
+    };
+
+    const createInputItem = (id) => {
+        const inputItem = document.createElement('div');
+        const hexId = id.toString(16).toUpperCase();
+        inputItem.classList.add('input-item');
+        inputItem.id = `input-${hexId}`;
+        inputItem.innerHTML = hexId;
+        return inputItem;
+    };
+
+    const createSelectableItem = (content, id) => {
+        const item = document.createElement('div');
+        item.innerHTML = content;
+        item.id = `item-${id}`;
+        return item;
+    };
+
+    const selectItem = (id, skipScroll = false) => {
+        const previouslySelected = scrollableDiv.querySelector('.selected');
+        if (previouslySelected) {
+            previouslySelected.classList.remove('selected');
         }
-        selectedItem.classList.add('selected');
-    }
-};
+        const selectedItem = scrollableDiv.querySelector(`#item-${id}`);
+        if (selectedItem) {
+            if (!skipScroll) {
+                selectedItem.scrollIntoView();
+            }
+            selectedItem.classList.add('selected');
+        }
+    };
 
-window.selectItem = selectItem;
+    ns.clearCodeLines = () => {
+        scrollableDiv.querySelectorAll('div').forEach(item => item.remove());
+    };
+
+    ns.addCodeLines = () => {
+        for (let i = 0; i < 4096; i += 2) {
+            const opcode = chip8.memory.slice(i, i+2).toHex();
+            scrollableDiv.append(createSelectableItem(`[${String(i).padStart(4, 0)}] ${opcode}`, i));
+        }
+    };
+    
+    ns.selectCurrentCodeLine = () => {
+        selectItem(chip8.cpu.PC & 1 ? chip8.cpu.PC - 1 : chip8.cpu.PC);
+    };
+
+    ns.renderRegisters = () => {
+        if (!registersRendered) {
+            for (let i = 0; i < 16; i++) {
+                const regItem = createRegisterItem(i);
+                registerContainer.append(regItem);
+                registerEls.push(regItem.querySelector('.value'));
+            }
+            registersRendered = true;
+        }
+        for (let i = 0; i < 16; i++) {
+            registerEls[i].innerHTML = chip8.registers.V[i];
+        }
+    };
+
+    ns.renderInput = () => {
+        if (!inputRendered) {
+            for (let i = 0; i < 16; i++) {
+                const inputItem = createInputItem(chip8.input.keyList[i]);
+                inputContainer.append(inputItem);
+                inputEls.push(inputItem); 
+            }
+            inputRendered = true;
+        }
+        for (let i = 0; i < 16; i++) {
+            const key = chip8.input.keyList[i];
+            if (chip8.input.isKeyPressed(key)) {
+                inputEls[i].classList.add('pressed');
+            }
+            else {
+                inputEls[i].classList.remove('pressed');
+            }
+        }
+    };
+
+    ns.resetStack = () => {
+        stackEls.length = 0;
+        stackContainer.querySelectorAll('.stack-item').forEach(item => item.remove());
+    };
+
+    ns.pushNewItemToStack = (item) => {
+        const stackItem = document.createElement('div');
+        stackItem.classList.add('stack-item');
+        stackItem.innerHTML = item.toString(16).toUpperCase().padStart(4, '0');
+        stackContainer.append(stackItem);
+        stackEls.push(stackItem);
+    };
+
+    ns.removeLastItemFromStack = () => {
+        if (stackEls.length) {
+            stackEls[stackEls.length - 1].remove();
+            stackEls.length--;
+        }
+    }
+
+    ns.reset = () => {
+        ns.resetStack();
+        ns.clearCodeLines();
+    };
+
+    ns.renderTimersAndCounters = () => {
+        if (!tacRendered) {
+            const tacList = ['pc', 'i', 'dt', 'st'];
+            tacList.map(tac => {
+                const tacItem = createTACItem(tac);
+                tacEls[tac] = tacItem.querySelector('.value');
+                tacContainer.append(tacItem);
+            });
+            tacRendered = true;
+        }
+        tacEls['pc'].innerHTML = chip8.cpu.PC;
+        tacEls['dt'].innerHTML = chip8.timer.getDelay();
+        tacEls['st'].innerHTML = chip8.timer.getSound();
+        tacEls['i'].innerHTML = chip8.registers.I;
+    };
+    
+    return ns;
+})();
+

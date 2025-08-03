@@ -5,23 +5,23 @@ chip8.display = (() => {
   const canvas = displayEl.querySelector('canvas');
   const ctx = canvas.getContext('2d');
 
-  const COLOR_BLACK = '#000000';
-  const COLOR_WHITE = '#FFFFFF';
+  const COLOR_BG = '#000000';
+  const COLOR_STROKE = '#ffffff';
   const SCREEN_WIDTH = 64;
   const SCREEN_HEIGHT = 32;
   const SCALE_FACTOR = 8;
 
   // We can just use the 64x32 coordinate space after this
   ctx.scale(SCALE_FACTOR, SCALE_FACTOR);
-
+  ctx.fillStyle = COLOR_BG;
   ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
   const ns = Object.create(null);
   
   ns.clear = () => {
-    ctx.fillStyle = COLOR_BLACK;
+    ctx.fillStyle = COLOR_BG;
     ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-  }
+  };
   
   ns.draw = (root_x, root_y, data) => {
     // `root_x` and `root_y` coords must be "sanitized" beforehand
@@ -45,7 +45,7 @@ chip8.display = (() => {
           chip8.registers.V[0xF] = 1;
         }
         const resultPixel = currentPixel ^ toDrawBit;
-        ctx.fillStyle = resultPixel ? COLOR_WHITE : COLOR_BLACK;
+        ctx.fillStyle = resultPixel ? COLOR_STROKE : COLOR_BG;
         ctx.fillRect(x + bit, y, 1, 1);
       }
     }

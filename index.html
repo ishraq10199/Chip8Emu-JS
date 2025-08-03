@@ -7,18 +7,23 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div>
-        <input id="romupload" type="file">
-        <button id="readrom">Run</button>
-        <button id="pause">Pause</button>
-    </div>
-    <div id="chip8display" style="padding: 1rem;">
-        <canvas width="512" height="256" style="border: 1px solid gray;"></canvas>
-    </div>
-    <div id="chip8code" class="scrollable">
-        
+    <div class="chip8-grid-container">
+        <div class="chip8-romcontrols">
+            <input id="romupload" type="file">
+            <div class="action-buttons">
+                <button id="readrom">Run</button>
+                <button id="pause">Pause</button>
+            </div> 
+        </div>
+        <div id="chip8display" class="chip8-display">
+            <canvas width="512" height="256"></canvas>
+        </div>
+        <div id="chip8code" class="scrollable"></div>
+        <div class="chip8-stack scrollable"></div>
+        <div class="chip8-registers"></div>
+        <div class="chip8-input"></div>
+        <div class="chip8-timers-and-counters"></div>
     </div>
 </body>
-<!-- <script src="js/main.js"></script> -->
 <script type="module" src="js/main.js"></script>
 </html>

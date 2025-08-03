@@ -5,7 +5,6 @@ chip8.timer = (() => {
   const SOUND = 1;
   const timers = new Uint8ClampedArray(2);
 
-  // @todo Timer logic
   const ns = Object.create(null);
 
   ns.setDelay = (value) => {

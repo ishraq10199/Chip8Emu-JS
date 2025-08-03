@@ -1,19 +1,19 @@
 const { chip8 } = window;
 
-chip8.initCPU = () => {
-  for (let i = 0; i < chip8.registers.V.length; i++) {
-    chip8.registers.V[i] = 0;
-  }
-  chip8.timer.setDelay(0);
-  chip8.timer.setSound(0);
-  chip8.cpu.PC = Number(0x200);
-}
-
 chip8.cpu = (() => {
   const ns = Object.create(null);
   const fetched = new Uint8Array(2);
   ns.PC = 0;
   ns.operations = Object.create(null);
+  
+  ns.init = () => {
+    for (let i = 0; i < chip8.registers.V.length; i++) {
+      chip8.registers.V[i] = 0;
+    }
+    chip8.timer.setDelay(0);
+    chip8.timer.setSound(0);
+    chip8.cpu.PC = Number(0x200);
+  };
 
   ns.operations.clearScreen = () => {
     chip8.display.clear();
@@ -69,7 +69,6 @@ chip8.cpu = (() => {
     const spriteData = chip8.memory.slice(idx, idx + n);
     const root_x = chip8.registers.V[x];
     const root_y = chip8.registers.V[y];
-    // chip8.display.draw(x, y, spriteData);
     chip8.display.draw(root_x % w, root_y % h, spriteData);
   };
 
@@ -138,7 +137,6 @@ chip8.cpu = (() => {
   };
 
   ns.operations.writeDelayTimer = (register) => {
-    // chip8.timer.delay = chip8.registers.V[register];
     chip8.timer.setDelay(chip8.registers.V[register]);
   };
 
@@ -218,8 +216,6 @@ chip8.cpu = (() => {
   };
 
   ns.decode = (instruction) => {
-    // Switch-case statement to understand what needs to be done
-
     const X = Number(`0x${instruction[1]}`);
     const Y = Number(`0x${instruction[2]}`);
     const N = Number(`0x${instruction[3]}`);
@@ -392,7 +388,14 @@ chip8.cpu = (() => {
     if (typeof operation === 'function') {
       operation();
     }
-    // Run the decoded instruction
   };
+
+  ns.tick = () => {
+    const fetchedInstruction = ns.fetch();
+    const decodedOperation = ns.decode(fetchedInstruction);
+    ns.execute(decodedOperation);
+  };
+
   return ns;
+
 })();

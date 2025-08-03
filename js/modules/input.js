@@ -6,6 +6,7 @@ chip8.input = (() => {
   const keyMap = new Array(16);
   const mapKey = Object.create(null);
   let freshInput = -1;
+  const keyList = [0x1, 0x2, 0x3, 0xc, 0x4, 0x5, 0x6, 0xd, 0x7, 0x8, 0x9, 0xe, 0xa, 0x0, 0xb, 0xf];
 
   // @todo Maybe approach this in a better way?
   keyMap[0x1] = 'Digit1';
@@ -31,7 +32,7 @@ chip8.input = (() => {
   // @todo Register key events
   // It should update `keys[key]` if pressed/released
   // Released state value should be 0, and pressed state should be 1
-  for (let i = 0; i < 0xF; i++) {
+  for (let i = 0; i <= 0xF; i++) {
     mapKey[keyMap[i]] = i;
     window.addEventListener('keydown', ({code: key}) => {
       if (mapKey[key] === undefined) {
@@ -50,7 +51,6 @@ chip8.input = (() => {
     });
   }
 
-
   const ns = Object.create(null);
 
   ns.isKeyPressed = (key) => {
@@ -67,6 +67,8 @@ chip8.input = (() => {
     }
     return freshInput;
   };
+
+  ns.keyList = keyList;
 
   return ns;
 })();

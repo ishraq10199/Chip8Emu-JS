@@ -1,8 +1,9 @@
 .scrollable {
     border: 2px solid black;
-    max-height: 600px;
+    height: 256px;
     overflow: scroll;
-    width: 200px;
+    width: 150px;
+    border-radius: 0.25rem;
 }
 
 .scrollable .selected {
@@ -12,4 +13,93 @@
 
 .scrollable .selectable {
     cursor: pointer;
+}
+
+.chip8-display {
+    border-radius: 0.25rem;
+    border: 2px solid black;
+    width: 512px;
+    height: 256px;
+}
+.chip8-grid-container {
+    display: flex;
+}
+
+.chip8-romcontrols {
+    width: calc(512px - 0.50rem);
+    border: 2px solid black;
+    border-radius: 0.25rem;
+    height: fit-content;
+    padding: 0.25rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.chip8-romcontrols .action-buttons button{
+    width: 64px;
+}
+
+.chip8-registers {
+    border: 1px solid black;
+    border-radius: 0.25rem;
+    height: fit-content;
+    display: grid;
+    grid-template-columns: repeat(8, auto);
+    width: fit-content;
+}
+
+.chip8-registers .register-item {
+    width: 60px;
+    height: 50px;
+    border: 1px solid black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.chip8-input {
+    border: 1px solid black;
+    border-radius: 0.25rem;
+    height: fit-content;
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    width: fit-content;
+}
+
+.chip8-input .input-item {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid black;
+}
+
+.chip8-input .input-item.pressed {
+    background: black;
+    color: white;
+}
+
+.chip8-stack .stack-item:last-child{
+    background: black;
+    color: white;
+}
+
+.chip8-timers-and-counters .tac-item {
+    border: 1px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 60px;
+    height: 50px;
+}
+
+.chip8-timers-and-counters {
+    border: 1px solid black;
+    border-radius: 0.25rem;
+    display: grid;
+    height: fit-content;
+    grid-template-columns: repeat(2, auto)
 }
