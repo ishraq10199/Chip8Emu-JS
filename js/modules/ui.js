@@ -17,6 +17,22 @@ chip8.ui = (() => {
     let tacRendered = false;
     const tacEls = Object.create(null);
 
+    const memoryContainer = document.querySelector('.chip8-memory');
+
+    const createMemoryLineItem = (num, bytes) => {
+        const memoryLineItem = document.createElement('div');
+        memoryLineItem.classList.add('memory-item');
+        const lineNumber = document.createElement('div');
+        lineNumber.innerHTML = `[${num.toString(16).padStart(4, '0')}]`;
+        lineNumber.classList.add('line-number');
+        memoryLineItem.append(lineNumber);
+        const contents = document.createElement('div');
+        contents.classList.add('contents');
+        contents.innerHTML = bytes.toHex().match(/.{1,2}/g).join(' ');
+        memoryLineItem.append(contents);
+        return memoryLineItem;
+    };
+
     const createTACItem = (id) => {
         const tacItem = document.createElement('div');
         tacItem.classList.add('tac-item');
@@ -102,7 +118,7 @@ chip8.ui = (() => {
             registersRendered = true;
         }
         for (let i = 0; i < 16; i++) {
-            registerEls[i].innerHTML = chip8.registers.V[i];
+            registerEls[i].innerHTML = `${chip8.registers.V[i]}`.padStart(3, 0);
         }
     };
 
@@ -144,7 +160,18 @@ chip8.ui = (() => {
             stackEls[stackEls.length - 1].remove();
             stackEls.length--;
         }
-    }
+    };
+
+    ns.resetMemory = () => {
+        memoryContainer.querySelectorAll('.memory-item').forEach(item => item.remove());
+    };
+
+    ns.renderMemory = (bytesPerLine = 16) => {
+        ns.resetMemory();
+        for (let i = 0; i < chip8.memory.length; i += bytesPerLine) {
+            memoryContainer.append(createMemoryLineItem(i, chip8.memory.slice(i, i + bytesPerLine)));
+        }
+    };
 
     ns.reset = () => {
         ns.resetStack();
@@ -166,7 +193,14 @@ chip8.ui = (() => {
         tacEls['st'].innerHTML = chip8.timer.getSound();
         tacEls['i'].innerHTML = chip8.registers.I;
     };
+
+    ns.init = () => {
+        ns.renderRegisters();
+        ns.renderInput();
+        ns.renderTimersAndCounters();
+    };
     
     return ns;
 })();
 
+document.addEventListener('DOMContentLoaded', chip8.ui.init, {once: true});

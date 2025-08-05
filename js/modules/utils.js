@@ -28,8 +28,8 @@ chip8.utils = (() => {
     }
   
     chip8.memoryUtils.populateFonts();
-    chip8.loadRom();
     chip8.ui.reset();
+    chip8.loadRom();
     chip8.ui.addCodeLines();
   
     chip8.debug = chip8.debug || !!localStorage.getItem('debug') || false;

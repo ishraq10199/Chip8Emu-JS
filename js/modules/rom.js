@@ -25,16 +25,17 @@ chip8.initRomReader = () => {
       chip8.debug && console.log('--------------------END ROM--------------------');
       chip8.utils.run();
     };
-
+    
     reader.onerror = (e) => {
       console.log('------------------ROM READING ERROR------------------');
       console.error(e.type);
       console.log('----------------------END ERROR----------------------');
     };
-
+    
     reader.readAsArrayBuffer(file);
+    chip8.ui.renderMemory(16);
   });
-
+  
   pauseButton.addEventListener('click', () => {
     chip8.paused = !chip8.paused;
     pauseButton.innerHTML = chip8.paused ? 'Resume' : 'Pause';  
@@ -42,18 +43,18 @@ chip8.initRomReader = () => {
 };
 
 chip8.loadRom = () => {
-    if (!chip8.romdata.bytes || !chip8.romdata.bytes.length) {
-        console.info('Could not load ROM - have you uploaded + read one?');
-        return;
-    }
-    if (chip8.romdata.bytes.length >= 3986) {
-        console.error('The uploaded ROM is an invalid chip8 ROM');
-        return;
-    }
-    const rom = chip8.romdata.bytes;
-    for (let i = 0, memIndex = 0x200; i < rom.length; i++, memIndex++) {
-        chip8.memory[memIndex] = rom[i];
-    }
+  if (!chip8.romdata.bytes || !chip8.romdata.bytes.length) {
+    console.info('Could not load ROM - have you uploaded + read one?');
+    return;
+  }
+  if (chip8.romdata.bytes.length >= 3986) {
+    console.error('The uploaded ROM is an invalid chip8 ROM');
+    return;
+  }
+  const rom = chip8.romdata.bytes;
+  for (let i = 0, memIndex = 0x200; i < rom.length; i++, memIndex++) {
+    chip8.memory[memIndex] = rom[i];
+  }
 };
 
 document.addEventListener('DOMContentLoaded', chip8.initRomReader, {once: true});
