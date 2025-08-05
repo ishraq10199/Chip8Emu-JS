@@ -8,6 +8,7 @@
 </head>
 <body>
     <div class="chip8-grid-container">
+        <div class="chip8-title">::::::::::::: CHIP8 EMULATOR :::::::::::::</div>
         <div class="chip8-romcontrols">
             <input id="romupload" type="file">
             <div class="action-buttons">
@@ -18,13 +19,54 @@
         <div id="chip8display" class="chip8-display">
             <canvas width="512" height="256"></canvas>
         </div>
-        <div id="chip8code" class="chip8-code scrollable"></div>
-        <div class="chip8-stack scrollable"></div>
+        <div id="chip8code" class="chip8-code">
+            <div class="chip8-component-label">Code</div>
+            <div class="content"></div>
+        </div>
+        <div class="chip8-stack">
+            <div class="chip8-component-label">Call stack</div>
+            <div class="content"></div>
+        </div>
         <div class="chip8-registers"></div>
         <div class="chip8-input"></div>
         <div class="chip8-timers-and-counters"></div>
-        <div class="chip8-memory"></div>
-        <div class="chip8-misc"></div>
+        <div class="chip8-memory">
+            <div class="chip8-component-label">Memory</div>
+            <div class="content"></div>
+        </div>
+        <div class="chip8-misc">
+            <div class="chip8-component-label">Misc controls</div>
+            <div class="content">
+                <fieldset class="misc-item">
+                    <legend>Pause and step</legend>
+
+                    <div class="steppers">
+                        <div class="stepper" id="stepOne">
+                            <button>Step &#129146;</button>
+                            <span>One instruction</span>
+                        </div>
+                        <div class="stepper" id="stepMany">
+                            <button>Step &#8649;</button>
+                            <span><input type="number" min="0" value="2"> instructions</span>
+                        </div> 
+                    </div>
+                </fieldset>
+                <fieldset class="misc-item">
+                    <legend>Options</legend>
+                    <div class="misc-flags">
+                        <input type="checkbox" id="debugMessages" name="debugMessages">
+                        <label for="debugMessages">Show verbose instruction</label>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Currently performing instruction</legend>
+                    <div class="verbose-instruction"></div>
+                </fieldset>
+            </div>
+        </div>
+        <div class="chip8-src">
+            <a class="view-source-url" href="https://github.com/ishraq10199/Chip8Emu-JS">View source on Github</a>
+        </div>
     </div>
 </body>
 <script type="module" src="js/main.js"></script>

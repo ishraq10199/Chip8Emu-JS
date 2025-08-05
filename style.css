@@ -7,28 +7,25 @@ body {
     background: floralwhite;
 }
 
+.hidden {
+    display: none;
+}
+
 * {
     font-family: monospace;
+}
+
+.chip8-component-label {
+    position: sticky;
+    background: whitesmoke;
+    border-bottom: 1px solid black;
+    width: 100%;
+    text-align: center;
 }
 
 .chip8-romcontrols input[type="file"]::file-selector-button {
     font-family: monospace;
     border-radius: 0.25rem;
-}
-
-.scrollable {
-    border: 2px solid black;
-    overflow: scroll;
-    border-radius: 0.25rem;
-}
-
-.scrollable .selected {
-    background: black;
-    color: white;
-}
-
-.scrollable .selectable {
-    cursor: pointer;
 }
 
 .chip8-display {
@@ -38,24 +35,46 @@ body {
     justify-content: center;
     align-items: center;
     grid-area: disp;
-    background: bisque;
+    background: whitesmoke;
 }
+
 .chip8-grid-container {
     display: grid;
     grid-gap: 10px;
     justify-content: center;
     grid-template-columns: 128px 128px 256px 64px 440px 128px;
-    grid-template-rows: 35px 128px 128px 128px 256px;
-    grid-template-areas: 
+    grid-template-rows: 64px 35px 128px 128px 128px 256px 30px;
+    grid-template-areas:
+        "head       head        head        head        head        head"
         "rom        rom         rom         rom         rom         rom"
         "registers  registers   registers   registers   registers   pc"
         "tacs       tacs        input       disp        disp        pc"
         "tacs       tacs        input       disp        disp        pc"
-        "stack      misc        misc        misc        mem         pc";
+        "stack      misc        misc        misc        mem         pc"
+        "src        src         src         src         src         src";
+}
+
+.chip8-src{
+    grid-area: src;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.chip8-src a {
+    text-decoration: none;
+}
+
+.chip8-title {
+    display: flex;
+    font-size: 4rem;
+    text-wrap: nowrap;
+    grid-area: head;
+    flex-wrap: nowrap;
+    justify-content: center;
+    font-weight: 100;
 }
 
 .chip8-romcontrols {
-    /* width: calc(512px - 0.50rem); */
     border: 2px solid black;
     border-radius: 0.25rem;
     padding: 0.25rem;
@@ -99,8 +118,25 @@ body {
     align-items: center;
     outline: 1px solid black;
 }
+
 .chip8-code {
     grid-area: pc;    
+    border: 2px solid black;
+    border-radius: 0.25rem;
+}
+
+.chip8-code .content .selected {
+    background: black;
+    color: white;
+}
+
+.chip8-code .content {
+    overflow: scroll;
+    max-height: 650px;
+}
+
+.chip8-code .content .selectable {
+    cursor: pointer;
 }
 
 .chip8-input .input-item.pressed {
@@ -110,9 +146,16 @@ body {
 
 .chip8-stack {
     grid-area: stack;
+    border-radius: 0.25rem;
+    border: 2px solid black;
 }
 
-.chip8-stack .stack-item:last-child{
+.chip8-stack .content {
+    max-height: 235px;
+    overflow: scroll;
+}
+
+.chip8-stack .content .stack-item:last-child{
     background: black;
     color: white;
 }
@@ -134,11 +177,15 @@ body {
 }
 
 .chip8-memory {
-    overflow: scroll;
     border: 2px solid black;
     border-radius: 0.25rem;
     font-family: monospace;
     grid-area: mem;
+}
+
+.chip8-memory .content {
+    overflow: scroll;
+    max-height: 236px;
 }
 
 .chip8-memory .memory-item {
@@ -150,4 +197,30 @@ body {
     border: 2px solid black;
     border-radius: 0.25rem;
     grid-area: misc;
+}
+
+.chip8-misc .content {
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.chip8-misc .steppers {
+    display: flex;
+    flex-direction: column;
+    gap: 8px
+}
+
+.chip8-misc .steppers .stepper {
+    display: flex;
+    justify-content: space-between;
+}
+
+.chip8-misc .steppers .stepper button{
+    border-radius: 0.25rem;
+}
+
+.chip8-misc .steppers input {
+    width: 64px;
 }

@@ -12,6 +12,7 @@ chip8.cpu = (() => {
     }
     chip8.timer.setDelay(0);
     chip8.timer.setSound(0);
+    chip8.stack.clear();
     chip8.cpu.PC = Number(0x200);
   };
 
@@ -209,7 +210,7 @@ chip8.cpu = (() => {
     // Read 2 bytes, and increment the PC by 2
     fetched[0] = chip8.memory[chip8.cpu.PC];
     fetched[1] = chip8.memory[chip8.cpu.PC + 1];
-    chip8.debug && console.log('fetched', `0x${fetched.toHex()}`, 'at PC', chip8.cpu.PC);
+    chip8.debug && chip8.ui.verboseLog('fetched', `0x${fetched.toHex()}`, 'at PC', chip8.cpu.PC);
     chip8.cpu.PC += 2;
 
     return fetched.toHex();
@@ -230,111 +231,111 @@ chip8.cpu = (() => {
       case '0':
         switch (instruction.slice(1)) {
           case '0e0':
-            chip8.debug && console.log('Clearing screen');
+            chip8.debug && chip8.ui.verboseLog('Clearing screen');
             op = () => chip8.cpu.operations.clearScreen();
             break;
           case '0ee':
-            chip8.debug && console.log('Returning from subroutine to', `0x${chip8.stack[chip8.stack.length - 1].toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Returning from subroutine to', `0x${chip8.stack.top().toString(16)}`);
             op = () => chip8.cpu.operations.returnFromSubroutine();
             break;
         }
         break;
       case '1':
-        chip8.debug && console.log('Jumping to address', (`0x${NNN.toString(16)}`));
+        chip8.debug && chip8.ui.verboseLog('Jumping to address', (`0x${NNN.toString(16)}`));
         op = () => chip8.cpu.operations.jump(NNN);
         break;
       case '2':
-        chip8.debug && console.log('Jumping to subroutine at', (`0x${NNN.toString(16)}`));
+        chip8.debug && chip8.ui.verboseLog('Jumping to subroutine at', (`0x${NNN.toString(16)}`));
         op = () => chip8.cpu.operations.callSubroutine(NNN);
         break;
       case '3':
-        chip8.debug && console.log('Will skip next instruction if register', X, 'equals', NN);
+        chip8.debug && chip8.ui.verboseLog('Will skip next instruction if register', X, 'equals', NN);
         op = () => chip8.cpu.operations.skipEqualVal(X, NN);
         break;
       case '4':
-        chip8.debug && console.log('Will skip next instruction if register', X, 'not equals', NN);
+        chip8.debug && chip8.ui.verboseLog('Will skip next instruction if register', X, 'not equals', NN);
         op = () => chip8.cpu.operations.skipNotEqualVal(X, NN);
         break;
       case '5':
-        chip8.debug && console.log('Will skip next instruction if register', X, 'equals register', Y);
+        chip8.debug && chip8.ui.verboseLog('Will skip next instruction if register', X, 'equals register', Y);
         op = () => chip8.cpu.operations.skipEqualReg(X, Y);
         break;
       case '9':
-        chip8.debug && console.log('Will skip next instruction if register', X, 'not equals register', Y);
+        chip8.debug && chip8.ui.verboseLog('Will skip next instruction if register', X, 'not equals register', Y);
         op = () => chip8.cpu.operations.skipNotEqualReg(X, Y);
         break;
       case '6':
-        chip8.debug && console.log('Setting register', X, 'to value', NN);
+        chip8.debug && chip8.ui.verboseLog('Setting register', X, 'to value', NN);
         op = () => chip8.cpu.operations.setRegVal(X, NN);
         break;
       case '7':
-        chip8.debug && console.log('Adding to register', X, 'a value of', NN);
+        chip8.debug && chip8.ui.verboseLog('Adding to register', X, 'a value of', NN);
         op = () => chip8.cpu.operations.addWithoutCarry(X, NN);
         break;
       case '8':
         switch (N) {
           case 0x0:
-            chip8.debug && console.log('Setting value of register', X, 'to value of register', Y);
+            chip8.debug && chip8.ui.verboseLog('Setting value of register', X, 'to value of register', Y);
             op = () => chip8.cpu.operations.setRegReg(X, Y);
             break;
           case 0x1:
-            chip8.debug && console.log('Binary OR between registers', X, 'and', Y);
+            chip8.debug && chip8.ui.verboseLog('Binary OR between registers', X, 'and', Y);
             op = () => chip8.cpu.operations.binOR(X, Y);
             break;
           case 0x2:
-            chip8.debug && console.log('Binary AND between registers', X, 'and', Y);
+            chip8.debug && chip8.ui.verboseLog('Binary AND between registers', X, 'and', Y);
             op = () => chip8.cpu.operations.binAND(X, Y);
             break;
           case 0x3:
-            chip8.debug && console.log('Binary XOR between registers', X, 'and', Y);
+            chip8.debug && chip8.ui.verboseLog('Binary XOR between registers', X, 'and', Y);
             op = () => chip8.cpu.operations.binXOR(X, Y);
             break;
           case 0x4:
-            chip8.debug && console.log('Adding values between registers', X, 'and', Y, 'with carry');
+            chip8.debug && chip8.ui.verboseLog('Adding values between registers', X, 'and', Y, 'with carry');
             op = () => chip8.cpu.operations.addWithCarry(X, Y);
             break;
           case 0x5:
-            chip8.debug && console.log('Subtracting value of register', Y, 'from', X);
+            chip8.debug && chip8.ui.verboseLog('Subtracting value of register', Y, 'from', X);
             op = () => chip8.cpu.operations.subtract(X, Y);
             break;
           case 0x7:
-            chip8.debug && console.log('Subtracting value of register', X, 'from', Y);
+            chip8.debug && chip8.ui.verboseLog('Subtracting value of register', X, 'from', Y);
             op = () => chip8.cpu.operations.subtract(X, Y, true);
             break;
           case 0x6:
-            chip8.debug && console.log('Shifting right, using registers', X, 'and', Y);
+            chip8.debug && chip8.ui.verboseLog('Shifting right, using registers', X, 'and', Y);
             op = () => chip8.cpu.operations.shiftRight(X, Y);
             break;
           case 0xE:
-            chip8.debug && console.log('Shifting left, using registers', X, 'and', Y);
+            chip8.debug && chip8.ui.verboseLog('Shifting left, using registers', X, 'and', Y);
             op = () => chip8.cpu.operations.shiftLeft(X, Y);
             break;
         } 
         break;
       case 'a':
-        chip8.debug && console.log('Setting I to', `0x${NNN.toString(16)}`);
+        chip8.debug && chip8.ui.verboseLog('Setting I to', `0x${NNN.toString(16)}`);
         op = () => chip8.cpu.operations.setIndex(NNN);
         break;
       case 'b':
-        chip8.debug && console.log('Jumping with offset', `0x${NNN.toString(16)}`);
+        chip8.debug && chip8.ui.verboseLog('Jumping with offset', `0x${NNN.toString(16)}`);
         op = () => chip8.cpu.operations.jumpWithOffset(NNN, chip8.quirks.jumpWithOffsetAlt ? X : 0);
         break;
       case 'c':
-        chip8.debug && console.log('Generating random number, ' `0x${NNN.toString(16)}`);
+        chip8.debug && chip8.ui.verboseLog('Generating random number, ' `0x${NNN.toString(16)}`);
         op = () => chip8.cpu.operations.generateRandomNumber(X, NN);
         break;
       case 'd':
-        chip8.debug && console.log('Drawing at', X, ',', Y, '- a sprite of', N, 'rows');
+        chip8.debug && chip8.ui.verboseLog('Drawing at', X, ',', Y, '- a sprite of', N, 'rows');
         op = () => chip8.cpu.operations.draw(X, Y, N);
         break;
       case 'e':
         switch (NN) {
           case 0x9e:
-            chip8.debug && console.log('Skipped if key in register', `0x${X.toString(16)}`, 'pressed');
+            chip8.debug && chip8.ui.verboseLog('Skipped if key in register', `0x${X.toString(16)}`, 'pressed');
             op = () => chip8.cpu.operations.skipIfKeyPressed(X);
             break;
           case 0xa1:
-            chip8.debug && console.log('Skipped if key in register', `0x${X.toString(16)}`, 'not pressed');
+            chip8.debug && chip8.ui.verboseLog('Skipped if key in register', `0x${X.toString(16)}`, 'not pressed');
             op = () => chip8.cpu.operations.skipIfKeyNotPressed(X);
             break;
         }
@@ -342,39 +343,39 @@ chip8.cpu = (() => {
       case 'f':
         switch (NN) {
           case 0x07:
-            chip8.debug && console.log('Read delay timer to register', `0x${X.toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Read delay timer to register', `0x${X.toString(16)}`);
             op = () => chip8.cpu.operations.readDelayTimer(X);
             break;
           case 0x15:
-            chip8.debug && console.log('Set delay timer from register', `0x${X.toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Set delay timer from register', `0x${X.toString(16)}`);
             op = () => chip8.cpu.operations.writeDelayTimer(X);
             break;
           case 0x18:
-            chip8.debug && console.log('Set sound timer from register', `0x${X.toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Set sound timer from register', `0x${X.toString(16)}`);
             op = () => chip8.cpu.operations.writeSoundTimer(X);
             break;
           case 0x1e:
-            chip8.debug && console.log('Adding to index the value from register', `0x${X.toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Adding to index the value from register', `0x${X.toString(16)}`);
             op = () => chip8.cpu.operations.addToIndex(X);
             break;
           case 0x0a:
-            chip8.debug && console.log('Waiting for fresh key input into register', `0x${X.toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Waiting for fresh key input into register', `0x${X.toString(16)}`);
             op = () => chip8.cpu.operations.getKey(X);
             break;
           case 0x29:
-            chip8.debug && console.log('Setting index to font character in register', `0x${X.toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Setting index to font character in register', `0x${X.toString(16)}`);
             op = () => chip8.cpu.operations.fontCharacter(X);
             break;
           case 0x33:
-            chip8.debug && console.log('Storing binary coded decimal value at index from register', `0x${X.toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Storing binary coded decimal value at index from register', `0x${X.toString(16)}`);
             op = () => chip8.cpu.operations.bcdConvert(X);
             break;
           case 0x55:
-            chip8.debug && console.log('Storing in memory values in registers from 0 to', `0x${X.toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Storing in memory values in registers from 0 to', `0x${X.toString(16)}`);
             op = () => chip8.cpu.operations.storeRegisters(X);
             break;
           case 0x65:
-            chip8.debug && console.log('Loading from memory values to registers from 0 to', `0x${X.toString(16)}`);
+            chip8.debug && chip8.ui.verboseLog('Loading from memory values to registers from 0 to', `0x${X.toString(16)}`);
             op = () => chip8.cpu.operations.loadRegisters(X);
             break;
         }
@@ -395,6 +396,8 @@ chip8.cpu = (() => {
     const decodedOperation = ns.decode(fetchedInstruction);
     ns.execute(decodedOperation);
   };
+
+  ns.stepCount = 0;
 
   return ns;
 

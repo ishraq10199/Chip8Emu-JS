@@ -30,7 +30,7 @@ chip8.utils = (() => {
     chip8.memoryUtils.populateFonts();
     chip8.ui.reset();
     chip8.loadRom();
-    chip8.ui.addCodeLines();
+    chip8.ui.renderCodeLines();
   
     chip8.debug = chip8.debug || !!localStorage.getItem('debug') || false;
   
@@ -43,15 +43,22 @@ chip8.utils = (() => {
     cancelAnimationFrame(ns.mainLoopFrame);
 
     const mainLoop = () => {
-      if (!chip8.paused && performance.now() - mainLoopLastTime >= frameInterval) {
+      if (chip8.paused && chip8.cpu.stepCount) {
+        chip8.timer.decrement();
+        chip8.sound.play(); 
+        chip8.ui.selectCurrentCodeLine();
+        chip8.ui.render();
+        chip8.cpu.tick();
+        chip8.input.makeLastInputStale();
+        mainLoopLastTime = performance.now();
+        chip8.cpu.stepCount--;
+      }
+      else if (!chip8.paused && performance.now() - mainLoopLastTime >= frameInterval) {
         chip8.timer.decrement();
         chip8.sound.play(); 
         for (let i = 0; i < 11; i++) {
           chip8.ui.selectCurrentCodeLine();
-          chip8.ui.renderRegisters();
-          // chip8.ui.renderStack();
-          chip8.ui.renderTimersAndCounters();
-          chip8.ui.renderInput();
+          chip8.ui.render();
           chip8.cpu.tick();
         }
         chip8.input.makeLastInputStale();

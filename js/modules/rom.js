@@ -38,6 +38,7 @@ chip8.initRomReader = () => {
   
   pauseButton.addEventListener('click', () => {
     chip8.paused = !chip8.paused;
+    chip8.cpu.stepCount = 0;
     pauseButton.innerHTML = chip8.paused ? 'Resume' : 'Pause';  
   });
 };

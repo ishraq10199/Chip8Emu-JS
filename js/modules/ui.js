@@ -1,6 +1,20 @@
 chip8.ui = (() => {
     const ns = Object.create(null);
-    const scrollableDiv = document.querySelector('#chip8code');
+    
+    const codeContainer = document.querySelector('#chip8code .content');
+    let selectedCodeLine = null; 
+    const codeLineIndices = [];
+    const codeLineEls = Object.create(null);
+
+    const stepperContainer = document.querySelector('.chip8-misc .steppers');
+    const pauseButton = document.querySelector('.chip8-romcontrols #pause');
+    const singleStepper = stepperContainer.querySelector('#stepOne button');
+    const multipleStepper = stepperContainer.querySelector('#stepMany button');
+
+    const stepCountInput = stepperContainer.querySelector('#stepMany input');
+    let stepCountInputValue = +stepCountInput.value;
+
+    const verboseInstructionContainer = document.querySelector('.chip8-misc .verbose-instruction');
 
     let registersRendered = false;
     const registerContainer = document.querySelector('.chip8-registers');
@@ -10,14 +24,16 @@ chip8.ui = (() => {
     const inputContainer = document.querySelector('.chip8-input');
     const inputEls = [];
 
-    const stackContainer = document.querySelector('.chip8-stack');
+    const stackContainer = document.querySelector('.chip8-stack .content');
     const stackEls = [];
 
     const tacContainer = document.querySelector('.chip8-timers-and-counters');
     let tacRendered = false;
     const tacEls = Object.create(null);
 
-    const memoryContainer = document.querySelector('.chip8-memory');
+    const memoryContainer = document.querySelector('.chip8-memory .content');
+
+    const debugMessagesCheckbox = document.querySelector('.chip8-misc .misc-flags #debugMessages');
 
     const createMemoryLineItem = (num, bytes) => {
         const memoryLineItem = document.createElement('div');
@@ -72,19 +88,22 @@ chip8.ui = (() => {
         return inputItem;
     };
 
-    const createSelectableItem = (content, id) => {
+    const createCodeLineItem = (content, id) => {
         const item = document.createElement('div');
+        item.classList.add('code-item');
         item.innerHTML = content;
         item.id = `item-${id}`;
         return item;
     };
 
-    const selectItem = (id, skipScroll = false) => {
-        const previouslySelected = scrollableDiv.querySelector('.selected');
-        if (previouslySelected) {
-            previouslySelected.classList.remove('selected');
+    const selectCodeLineItem = (id, skipScroll = false) => {
+        selectedCodeLine = selectedCodeLine || codeContainer.querySelector('.selected');
+        if (selectedCodeLine) {
+            selectedCodeLine.classList.remove('selected');
         }
-        const selectedItem = scrollableDiv.querySelector(`#item-${id}`);
+        // const selectedItem = codeContainer.querySelector(`#item-${id}`);
+        const selectedItem = codeLineEls[id];
+        selectedCodeLine = selectedItem;
         if (selectedItem) {
             if (!skipScroll) {
                 selectedItem.scrollIntoView();
@@ -93,19 +112,27 @@ chip8.ui = (() => {
         }
     };
 
-    ns.clearCodeLines = () => {
-        scrollableDiv.querySelectorAll('div').forEach(item => item.remove());
+    ns.resetCodeLines = () => {
+        codeContainer.querySelectorAll('.code-item').forEach(item => item.remove());
+        codeLineIndices.map(i => {
+            delete codeLineEls[i];
+        });
+        codeLineIndices.length = 0;
     };
 
-    ns.addCodeLines = () => {
-        for (let i = 0; i < 4096; i += 2) {
+    ns.renderCodeLines = () => {
+        for (let i = 0; i < 4096; i += 1) {
             const opcode = chip8.memory.slice(i, i+2).toHex();
-            scrollableDiv.append(createSelectableItem(`[${String(i).padStart(4, 0)}] ${opcode}`, i));
+            const codeLineItem = createCodeLineItem(`[${String(i).padStart(4, 0)}] ${opcode}`, i);
+            codeContainer.append(codeLineItem);
+            codeLineEls[i] = codeLineItem;
+            codeLineIndices.push(i);
         }
     };
     
     ns.selectCurrentCodeLine = () => {
-        selectItem(chip8.cpu.PC & 1 ? chip8.cpu.PC - 1 : chip8.cpu.PC);
+        // selectCodeLineItem(chip8.cpu.PC & 1 ? chip8.cpu.PC - 1 : chip8.cpu.PC);
+        selectCodeLineItem(chip8.cpu.PC);
     };
 
     ns.renderRegisters = () => {
@@ -118,7 +145,7 @@ chip8.ui = (() => {
             registersRendered = true;
         }
         for (let i = 0; i < 16; i++) {
-            registerEls[i].innerHTML = `${chip8.registers.V[i]}`.padStart(3, 0);
+            registerEls[i].innerHTML = chip8.registers.V[i].toString(16).padStart(4, '0');
         }
     };
 
@@ -175,7 +202,7 @@ chip8.ui = (() => {
 
     ns.reset = () => {
         ns.resetStack();
-        ns.clearCodeLines();
+        ns.resetCodeLines();
     };
 
     ns.renderTimersAndCounters = () => {
@@ -188,18 +215,58 @@ chip8.ui = (() => {
             });
             tacRendered = true;
         }
-        tacEls['pc'].innerHTML = chip8.cpu.PC;
-        tacEls['dt'].innerHTML = chip8.timer.getDelay();
-        tacEls['st'].innerHTML = chip8.timer.getSound();
-        tacEls['i'].innerHTML = chip8.registers.I;
+        tacEls['pc'].innerHTML = chip8.cpu.PC.toString(16).padStart(4, '0');
+        tacEls['dt'].innerHTML = chip8.timer.getDelay().toString(16).padStart(4, '0');
+        tacEls['st'].innerHTML = chip8.timer.getSound().toString(16).padStart(4, '0');
+        tacEls['i'].innerHTML = chip8.registers.I.toString(16).padStart(4, '0');
     };
 
     ns.init = () => {
         ns.renderRegisters();
         ns.renderInput();
         ns.renderTimersAndCounters();
+        ns.addEventHandlers();
     };
     
+    ns.render = () => {
+        ns.renderRegisters();
+        ns.renderTimersAndCounters();
+        ns.renderInput();
+    };
+
+    ns.addEventHandlers = () => {
+        debugMessagesCheckbox.addEventListener('change', (e) => {
+            chip8.debug = e.target.checked;
+            if (e.target.checked) {
+                verboseInstructionContainer.classList.remove('hidden');
+                localStorage.setItem('debug', true);
+            }
+            else {
+                verboseInstructionContainer.classList.add('hidden');
+                localStorage.removeItem('debug');
+            }
+        });
+        singleStepper.addEventListener('click', () => {
+            if (!chip8.paused) {
+                pauseButton.click();
+            }
+            chip8.cpu.stepCount = 1;
+        });
+        multipleStepper.addEventListener('click', () => {
+            if (!chip8.paused) {
+                pauseButton.click();
+            }
+            chip8.cpu.stepCount = stepCountInputValue | 0;
+        });
+        stepCountInput.addEventListener('change', (e) => {
+            stepCountInputValue = +e.target.value;
+        });
+    };
+
+    ns.verboseLog = (...content) => {
+        verboseInstructionContainer.innerHTML = content.join(' ');
+    };
+
     return ns;
 })();
 
