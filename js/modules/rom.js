@@ -33,7 +33,6 @@ chip8.initRomReader = () => {
     };
     
     reader.readAsArrayBuffer(file);
-    chip8.ui.renderMemory(16);
   });
   
   pauseButton.addEventListener('click', () => {
@@ -56,6 +55,7 @@ chip8.loadRom = () => {
   for (let i = 0, memIndex = 0x200; i < rom.length; i++, memIndex++) {
     chip8.memory[memIndex] = rom[i];
   }
+  chip8.ui.renderMemory(16);
 };
 
 document.addEventListener('DOMContentLoaded', chip8.initRomReader, {once: true});

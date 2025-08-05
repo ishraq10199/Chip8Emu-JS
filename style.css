@@ -57,7 +57,7 @@ body {
 .chip8-src{
     grid-area: src;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
 }
 
 .chip8-src a {
