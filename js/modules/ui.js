@@ -1,273 +1,302 @@
-chip8.ui = (() => {
-    const ns = Object.create(null);
-    
-    const codeContainer = document.querySelector('#chip8code .content');
-    let selectedCodeLine = null; 
-    const codeLineIndices = [];
-    const codeLineEls = Object.create(null);
+const createUI = ({ memory, cpu, registers, input, timer, global }) => {
+  for (const [k, v] of Object.entries({
+    memory,
+    cpu,
+    registers,
+    input,
+    timer,
+    global,
+  })) {
+    if (!v) {
+      throw new Error(`[error] ${k} not provided during UI instancing`);
+    }
+  }
+  const ns = Object.create(null);
 
-    const stepperContainer = document.querySelector('.chip8-misc .steppers');
-    const pauseButton = document.querySelector('.chip8-romcontrols #pause');
-    const singleStepper = stepperContainer.querySelector('#stepOne button');
-    const multipleStepper = stepperContainer.querySelector('#stepMany button');
+  const codeContainer = document.querySelector("#chip8code .content");
+  let selectedCodeLine = null;
+  const codeLineIndices = [];
+  const codeLineEls = Object.create(null);
 
-    const stepCountInput = stepperContainer.querySelector('#stepMany input');
-    let stepCountInputValue = +stepCountInput.value;
+  const stepperContainer = document.querySelector(".chip8-misc .steppers");
+  const pauseButton = document.querySelector(".chip8-romcontrols #pause");
+  const singleStepper = stepperContainer.querySelector("#stepOne button");
+  const multipleStepper = stepperContainer.querySelector("#stepMany button");
 
-    const verboseInstructionContainer = document.querySelector('.chip8-misc .verbose-instruction');
+  const stepCountInput = stepperContainer.querySelector("#stepMany input");
+  let stepCountInputValue = +stepCountInput.value;
 
-    let registersRendered = false;
-    const registerContainer = document.querySelector('.chip8-registers');
-    const registerEls = [];
+  const verboseInstructionContainer = document.querySelector(
+    ".chip8-misc .verbose-instruction"
+  );
 
-    let inputRendered = false;
-    const inputContainer = document.querySelector('.chip8-input');
-    const inputEls = [];
+  let registersRendered = false;
+  const registerContainer = document.querySelector(".chip8-registers");
+  const registerEls = [];
 
-    const stackContainer = document.querySelector('.chip8-stack .content');
-    const stackEls = [];
+  let inputRendered = false;
+  const inputContainer = document.querySelector(".chip8-input");
+  const inputEls = [];
 
-    const tacContainer = document.querySelector('.chip8-timers-and-counters');
-    let tacRendered = false;
-    const tacEls = Object.create(null);
+  const stackContainer = document.querySelector(".chip8-stack .content");
+  const stackEls = [];
 
-    const memoryContainer = document.querySelector('.chip8-memory .content');
+  const tacContainer = document.querySelector(".chip8-timers-and-counters");
+  let tacRendered = false;
+  const tacEls = Object.create(null);
 
-    const debugMessagesCheckbox = document.querySelector('.chip8-misc .misc-flags #debugMessages');
+  const memoryContainer = document.querySelector(".chip8-memory .content");
 
-    const createMemoryLineItem = (num, bytes) => {
-        const memoryLineItem = document.createElement('div');
-        memoryLineItem.classList.add('memory-item');
-        const lineNumber = document.createElement('div');
-        lineNumber.innerHTML = `[${num.toString(16).padStart(4, '0')}]`;
-        lineNumber.classList.add('line-number');
-        memoryLineItem.append(lineNumber);
-        const contents = document.createElement('div');
-        contents.classList.add('contents');
-        contents.innerHTML = bytes.toHex().match(/.{1,2}/g).join(' ');
-        memoryLineItem.append(contents);
-        return memoryLineItem;
-    };
+  const debugMessagesCheckbox = document.querySelector(
+    ".chip8-misc .misc-flags #debugMessages"
+  );
 
-    const createTACItem = (id) => {
-        const tacItem = document.createElement('div');
-        tacItem.classList.add('tac-item');
-        tacItem.id = id;
-        const tacLabel = document.createElement('div');
-        tacLabel.classList.add('label');
-        tacLabel.innerHTML = id.toUpperCase();
-        tacItem.append(tacLabel);
-        const tacValue = document.createElement('div');
-        tacValue.classList.add('value');
-        tacValue.innerHTML = 0;
-        tacItem.append(tacValue);
-        return tacItem;
-    };
+  const createMemoryLineItem = (num, bytes) => {
+    const memoryLineItem = document.createElement("div");
+    memoryLineItem.classList.add("memory-item");
+    const lineNumber = document.createElement("div");
+    lineNumber.innerHTML = `[${num.toString(16).padStart(4, "0")}]`;
+    lineNumber.classList.add("line-number");
+    memoryLineItem.append(lineNumber);
+    const contents = document.createElement("div");
+    contents.classList.add("contents");
+    contents.innerHTML = bytes
+      .toHex()
+      .match(/.{1,2}/g)
+      .join(" ");
+    memoryLineItem.append(contents);
+    return memoryLineItem;
+  };
 
-    const createRegisterItem = (id) => {
-        const regItem = document.createElement('div');
-        const hexId = id.toString(16).toUpperCase();
-        const regLabel = document.createElement('div');
-        regLabel.innerHTML = `V${hexId}`
-        const regValue = document.createElement('div');
-        regLabel.classList.add('label');
-        regValue.classList.add('value');
-        regItem.classList.add('register-item');
-        regItem.id = `register-v${hexId}`;
-        regItem.append(regLabel);
-        regItem.append(regValue);
-        return regItem;
-    };
+  const createTACItem = (id) => {
+    const tacItem = document.createElement("div");
+    tacItem.classList.add("tac-item");
+    tacItem.id = id;
+    const tacLabel = document.createElement("div");
+    tacLabel.classList.add("label");
+    tacLabel.innerHTML = id.toUpperCase();
+    tacItem.append(tacLabel);
+    const tacValue = document.createElement("div");
+    tacValue.classList.add("value");
+    tacValue.innerHTML = 0;
+    tacItem.append(tacValue);
+    return tacItem;
+  };
 
-    const createInputItem = (id) => {
-        const inputItem = document.createElement('div');
-        const hexId = id.toString(16).toUpperCase();
-        inputItem.classList.add('input-item');
-        inputItem.id = `input-${hexId}`;
-        inputItem.innerHTML = hexId;
-        return inputItem;
-    };
+  const createRegisterItem = (id) => {
+    const regItem = document.createElement("div");
+    const hexId = id.toString(16).toUpperCase();
+    const regLabel = document.createElement("div");
+    regLabel.innerHTML = `V${hexId}`;
+    const regValue = document.createElement("div");
+    regLabel.classList.add("label");
+    regValue.classList.add("value");
+    regItem.classList.add("register-item");
+    regItem.id = `register-v${hexId}`;
+    regItem.append(regLabel);
+    regItem.append(regValue);
+    return regItem;
+  };
 
-    const createCodeLineItem = (content, id) => {
-        const item = document.createElement('div');
-        item.classList.add('code-item');
-        item.innerHTML = content;
-        item.id = `item-${id}`;
-        return item;
-    };
+  const createInputItem = (id) => {
+    const inputItem = document.createElement("div");
+    const hexId = id.toString(16).toUpperCase();
+    inputItem.classList.add("input-item");
+    inputItem.id = `input-${hexId}`;
+    inputItem.innerHTML = hexId;
+    return inputItem;
+  };
 
-    const selectCodeLineItem = (id, skipScroll = false) => {
-        selectedCodeLine = selectedCodeLine || codeContainer.querySelector('.selected');
-        if (selectedCodeLine) {
-            selectedCodeLine.classList.remove('selected');
-        }
-        // const selectedItem = codeContainer.querySelector(`#item-${id}`);
-        const selectedItem = codeLineEls[id];
-        selectedCodeLine = selectedItem;
-        if (selectedItem) {
-            if (!skipScroll) {
-                selectedItem.scrollIntoView();
-            }
-            selectedItem.classList.add('selected');
-        }
-    };
+  const createCodeLineItem = (content, id) => {
+    const item = document.createElement("div");
+    item.classList.add("code-item");
+    item.innerHTML = content;
+    item.id = `item-${id}`;
+    return item;
+  };
 
-    ns.resetCodeLines = () => {
-        codeContainer.querySelectorAll('.code-item').forEach(item => item.remove());
-        codeLineIndices.map(i => {
-            delete codeLineEls[i];
-        });
-        codeLineIndices.length = 0;
-    };
+  const selectCodeLineItem = (id, skipScroll = false) => {
+    selectedCodeLine =
+      selectedCodeLine || codeContainer.querySelector(".selected");
+    if (selectedCodeLine) {
+      selectedCodeLine.classList.remove("selected");
+    }
+    // const selectedItem = codeContainer.querySelector(`#item-${id}`);
+    const selectedItem = codeLineEls[id];
+    selectedCodeLine = selectedItem;
+    if (selectedItem) {
+      if (!skipScroll) {
+        selectedItem.scrollIntoView();
+      }
+      selectedItem.classList.add("selected");
+    }
+  };
 
-    ns.renderCodeLines = () => {
-        for (let i = 0; i < 4096; i += 1) {
-            const opcode = chip8.memory.slice(i, i+2).toHex();
-            const codeLineItem = createCodeLineItem(`[${String(i).padStart(4, 0)}] ${opcode}`, i);
-            codeContainer.append(codeLineItem);
-            codeLineEls[i] = codeLineItem;
-            codeLineIndices.push(i);
-        }
-    };
-    
-    ns.selectCurrentCodeLine = () => {
-        // selectCodeLineItem(chip8.cpu.PC & 1 ? chip8.cpu.PC - 1 : chip8.cpu.PC);
-        selectCodeLineItem(chip8.cpu.PC);
-    };
+  ns.resetCodeLines = () => {
+    codeContainer
+      .querySelectorAll(".code-item")
+      .forEach((item) => item.remove());
+    codeLineIndices.map((i) => {
+      delete codeLineEls[i];
+    });
+    codeLineIndices.length = 0;
+  };
 
-    ns.renderRegisters = () => {
-        if (!registersRendered) {
-            for (let i = 0; i < 16; i++) {
-                const regItem = createRegisterItem(i);
-                registerContainer.append(regItem);
-                registerEls.push(regItem.querySelector('.value'));
-            }
-            registersRendered = true;
-        }
-        for (let i = 0; i < 16; i++) {
-            registerEls[i].innerHTML = chip8.registers.V[i].toString(16).padStart(4, '0');
-        }
-    };
+  ns.renderCodeLines = () => {
+    for (let i = 0; i < 4096; i += 1) {
+      const opcode = memory.slice(i, i + 2).toHex();
+      const codeLineItem = createCodeLineItem(
+        `[${String(i).padStart(4, 0)}] ${opcode}`,
+        i
+      );
+      codeContainer.append(codeLineItem);
+      codeLineEls[i] = codeLineItem;
+      codeLineIndices.push(i);
+    }
+  };
 
-    ns.renderInput = () => {
-        if (!inputRendered) {
-            for (let i = 0; i < 16; i++) {
-                const inputItem = createInputItem(chip8.input.keyList[i]);
-                inputContainer.append(inputItem);
-                inputEls.push(inputItem); 
-            }
-            inputRendered = true;
-        }
-        for (let i = 0; i < 16; i++) {
-            const key = chip8.input.keyList[i];
-            if (chip8.input.isKeyPressed(key)) {
-                inputEls[i].classList.add('pressed');
-            }
-            else {
-                inputEls[i].classList.remove('pressed');
-            }
-        }
-    };
+  ns.selectCurrentCodeLine = () => {
+    // selectCodeLineItem(cpu.PC & 1 ? cpu.PC - 1 : cpu.PC);
+    selectCodeLineItem(cpu.PC);
+  };
 
-    ns.resetStack = () => {
-        stackEls.length = 0;
-        stackContainer.querySelectorAll('.stack-item').forEach(item => item.remove());
-    };
+  ns.renderRegisters = () => {
+    if (!registersRendered) {
+      for (let i = 0; i < 16; i++) {
+        const regItem = createRegisterItem(i);
+        registerContainer.append(regItem);
+        registerEls.push(regItem.querySelector(".value"));
+      }
+      registersRendered = true;
+    }
+    for (let i = 0; i < 16; i++) {
+      registerEls[i].innerHTML = registers.V[i].toString(16).padStart(4, "0");
+    }
+  };
 
-    ns.pushNewItemToStack = (item) => {
-        const stackItem = document.createElement('div');
-        stackItem.classList.add('stack-item');
-        stackItem.innerHTML = item.toString(16).toUpperCase().padStart(4, '0');
-        stackContainer.append(stackItem);
-        stackEls.push(stackItem);
-    };
+  ns.renderInput = () => {
+    if (!inputRendered) {
+      for (let i = 0; i < 16; i++) {
+        const inputItem = createInputItem(input.keyList[i]);
+        inputContainer.append(inputItem);
+        inputEls.push(inputItem);
+      }
+      inputRendered = true;
+    }
+    for (let i = 0; i < 16; i++) {
+      const key = input.keyList[i];
+      if (input.isKeyPressed(key)) {
+        inputEls[i].classList.add("pressed");
+      } else {
+        inputEls[i].classList.remove("pressed");
+      }
+    }
+  };
 
-    ns.removeLastItemFromStack = () => {
-        if (stackEls.length) {
-            stackEls[stackEls.length - 1].remove();
-            stackEls.length--;
-        }
-    };
+  ns.resetStack = () => {
+    stackEls.length = 0;
+    stackContainer
+      .querySelectorAll(".stack-item")
+      .forEach((item) => item.remove());
+  };
 
-    ns.resetMemory = () => {
-        memoryContainer.querySelectorAll('.memory-item').forEach(item => item.remove());
-    };
+  ns.pushNewItemToStack = (item) => {
+    const stackItem = document.createElement("div");
+    stackItem.classList.add("stack-item");
+    stackItem.innerHTML = item.toString(16).toUpperCase().padStart(4, "0");
+    stackContainer.append(stackItem);
+    stackEls.push(stackItem);
+  };
 
-    ns.renderMemory = (bytesPerLine = 16) => {
-        ns.resetMemory();
-        for (let i = 0; i < chip8.memory.length; i += bytesPerLine) {
-            memoryContainer.append(createMemoryLineItem(i, chip8.memory.slice(i, i + bytesPerLine)));
-        }
-    };
+  ns.removeLastItemFromStack = () => {
+    if (stackEls.length) {
+      stackEls[stackEls.length - 1].remove();
+      stackEls.length--;
+    }
+  };
 
-    ns.reset = () => {
-        ns.resetStack();
-        ns.resetCodeLines();
-    };
+  ns.resetMemory = () => {
+    memoryContainer
+      .querySelectorAll(".memory-item")
+      .forEach((item) => item.remove());
+  };
 
-    ns.renderTimersAndCounters = () => {
-        if (!tacRendered) {
-            const tacList = ['pc', 'i', 'dt', 'st'];
-            tacList.map(tac => {
-                const tacItem = createTACItem(tac);
-                tacEls[tac] = tacItem.querySelector('.value');
-                tacContainer.append(tacItem);
-            });
-            tacRendered = true;
-        }
-        tacEls['pc'].innerHTML = chip8.cpu.PC.toString(16).padStart(4, '0');
-        tacEls['dt'].innerHTML = chip8.timer.getDelay().toString(16).padStart(4, '0');
-        tacEls['st'].innerHTML = chip8.timer.getSound().toString(16).padStart(4, '0');
-        tacEls['i'].innerHTML = chip8.registers.I.toString(16).padStart(4, '0');
-    };
+  ns.renderMemory = (bytesPerLine = 16) => {
+    ns.resetMemory();
+    for (let i = 0; i < memory.length; i += bytesPerLine) {
+      memoryContainer.append(
+        createMemoryLineItem(i, memory.slice(i, i + bytesPerLine))
+      );
+    }
+  };
 
-    ns.init = () => {
-        ns.renderRegisters();
-        ns.renderInput();
-        ns.renderTimersAndCounters();
-        ns.addEventHandlers();
-    };
-    
-    ns.render = () => {
-        ns.renderRegisters();
-        ns.renderTimersAndCounters();
-        ns.renderInput();
-    };
+  ns.reset = () => {
+    ns.resetStack();
+    ns.resetCodeLines();
+  };
 
-    ns.addEventHandlers = () => {
-        debugMessagesCheckbox.addEventListener('change', (e) => {
-            chip8.debug = e.target.checked;
-            if (e.target.checked) {
-                verboseInstructionContainer.classList.remove('hidden');
-                localStorage.setItem('debug', true);
-            }
-            else {
-                verboseInstructionContainer.classList.add('hidden');
-                localStorage.removeItem('debug');
-            }
-        });
-        singleStepper.addEventListener('click', () => {
-            if (!chip8.paused) {
-                pauseButton.click();
-            }
-            chip8.cpu.stepCount = 1;
-        });
-        multipleStepper.addEventListener('click', () => {
-            if (!chip8.paused) {
-                pauseButton.click();
-            }
-            chip8.cpu.stepCount = stepCountInputValue | 0;
-        });
-        stepCountInput.addEventListener('change', (e) => {
-            stepCountInputValue = +e.target.value;
-        });
-    };
+  ns.renderTimersAndCounters = () => {
+    if (!tacRendered) {
+      const tacList = ["pc", "i", "dt", "st"];
+      tacList.map((tac) => {
+        const tacItem = createTACItem(tac);
+        tacEls[tac] = tacItem.querySelector(".value");
+        tacContainer.append(tacItem);
+      });
+      tacRendered = true;
+    }
+    tacEls["pc"].innerHTML = cpu.PC.toString(16).padStart(4, "0");
+    tacEls["dt"].innerHTML = timer.getDelay().toString(16).padStart(4, "0");
+    tacEls["st"].innerHTML = timer.getSound().toString(16).padStart(4, "0");
+    tacEls["i"].innerHTML = registers.I.toString(16).padStart(4, "0");
+  };
 
-    ns.verboseLog = (...content) => {
-        verboseInstructionContainer.innerHTML = content.join(' ');
-    };
+  ns.init = () => {
+    ns.renderRegisters();
+    ns.renderInput();
+    ns.renderTimersAndCounters();
+    ns.addEventHandlers();
+  };
 
-    return ns;
-})();
+  ns.render = () => {
+    ns.renderRegisters();
+    ns.renderTimersAndCounters();
+    ns.renderInput();
+  };
 
-document.addEventListener('DOMContentLoaded', chip8.ui.init, {once: true});
+  ns.addEventHandlers = () => {
+    debugMessagesCheckbox.addEventListener("change", (e) => {
+      global.debug = e.target.checked;
+      if (e.target.checked) {
+        verboseInstructionContainer.classList.remove("hidden");
+        localStorage.setItem("debug", true);
+      } else {
+        verboseInstructionContainer.classList.add("hidden");
+        localStorage.removeItem("debug");
+      }
+    });
+    singleStepper.addEventListener("click", () => {
+      if (!global.paused) {
+        pauseButton.click();
+      }
+      cpu.stepCount = 1;
+    });
+    multipleStepper.addEventListener("click", () => {
+      if (!global.paused) {
+        pauseButton.click();
+      }
+      cpu.stepCount = stepCountInputValue | 0;
+    });
+    stepCountInput.addEventListener("change", (e) => {
+      stepCountInputValue = +e.target.value;
+    });
+  };
+
+  ns.verboseLog = (...content) => {
+    verboseInstructionContainer.innerHTML = content.join(" ");
+  };
+
+  return ns;
+};
+
+export { createUI };

@@ -1,41 +1,75 @@
 const { chip8 } = window;
 
-chip8.utils = (() => {
+const createUtils = ({
+  memoryUtils,
+  ui,
+  cpu,
+  display,
+  input,
+  sound,
+  timer,
+  rom,
+  global,
+}) => {
+  for (const [k, v] of Object.entries({
+    memoryUtils,
+    ui,
+    cpu,
+    display,
+    input,
+    sound,
+    timer,
+    rom,
+    global,
+  })) {
+    if (!v) {
+      throw new Error(`[error] ${k} not provided during Utils instancing`);
+    }
+  }
   const ns = Object.create(null);
 
   ns.mainLoopFrame = null;
-  
+
   ns.hexDump = (byteArray, skipBorders = false, bytesPerLine = 16) => {
-    if (typeof byteArray !== 'object' || byteArray.constructor.name !== 'Uint8Array') {
+    if (
+      typeof byteArray !== "object" ||
+      byteArray.constructor.name !== "Uint8Array"
+    ) {
       return;
     }
     if (!skipBorders) {
       console.log("----------------------Hexdump----------------------");
     }
-  
+
     for (let i = 0; i < byteArray.length; i += bytesPerLine) {
-      console.log(byteArray.slice(i, i + bytesPerLine).toHex().match(/.{1,2}/g).join(' '));
+      console.log(
+        byteArray
+          .slice(i, i + bytesPerLine)
+          .toHex()
+          .match(/.{1,2}/g)
+          .join(" ")
+      );
     }
     if (!skipBorders) {
-      console.log("----------------------Enddump----------------------")
+      console.log("----------------------Enddump----------------------");
     }
   };
 
   ns.run = () => {
-    if (chip8.paused) {
-      chip8.paused = false;
-      document.querySelector("button#pause").innerHTML = 'Pause';
+    if (global.paused) {
+      global.paused = false;
+      document.querySelector("button#pause").innerHTML = "Pause";
     }
-  
-    chip8.memoryUtils.populateFonts();
-    chip8.ui.reset();
-    chip8.loadRom();
-    chip8.ui.renderCodeLines();
-  
-    chip8.debug = chip8.debug || !!localStorage.getItem('debug') || false;
-  
-    chip8.cpu.init();
-    chip8.display.clear();
+
+    memoryUtils.populateFonts();
+    ui.reset();
+    rom.load();
+    ui.renderCodeLines();
+
+    global.debug = global.debug || !!localStorage.getItem("debug") || false;
+
+    cpu.init();
+    display.clear();
 
     let mainLoopLastTime = performance.now();
     const frameInterval = 6;
@@ -43,32 +77,35 @@ chip8.utils = (() => {
     cancelAnimationFrame(ns.mainLoopFrame);
 
     const mainLoop = () => {
-      if (chip8.paused && chip8.cpu.stepCount) {
-        chip8.timer.decrement();
-        chip8.sound.play(); 
-        chip8.ui.selectCurrentCodeLine();
-        chip8.ui.render();
-        chip8.cpu.tick();
-        chip8.input.makeLastInputStale();
+      if (global.paused && cpu.stepCount) {
+        timer.decrement();
+        sound.play();
+        ui.selectCurrentCodeLine();
+        ui.render();
+        cpu.tick();
+        input.makeLastInputStale();
         mainLoopLastTime = performance.now();
-        chip8.cpu.stepCount--;
-      }
-      else if (!chip8.paused && performance.now() - mainLoopLastTime >= frameInterval) {
-        chip8.timer.decrement();
-        chip8.sound.play(); 
+        cpu.stepCount--;
+      } else if (
+        !global.paused &&
+        performance.now() - mainLoopLastTime >= frameInterval
+      ) {
+        timer.decrement();
+        sound.play();
         for (let i = 0; i < 11; i++) {
-          chip8.ui.selectCurrentCodeLine();
-          chip8.ui.render();
-          chip8.cpu.tick();
+          ui.selectCurrentCodeLine();
+          ui.render();
+          cpu.tick();
         }
-        chip8.input.makeLastInputStale();
+        input.makeLastInputStale();
         mainLoopLastTime = performance.now();
       }
       ns.mainLoopFrame = requestAnimationFrame(mainLoop);
-    }
+    };
     ns.mainLoopFrame = requestAnimationFrame(mainLoop);
   };
 
   return ns;
-})();
+};
 
+export { createUtils };

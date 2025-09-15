@@ -1,13 +1,22 @@
-window.chip8 = Object.create(null);
+// TODO: Integrate all components here
 
-chip8.paused = false;
-chip8.debug = !!localStorage.getItem('debug') || false;
+// TODO: Initialize some stuff after DOM load
 
-// TODO: adjust quirks and test further
-chip8.quirks = (() => {
-    const ns = Object.create(null);
-    ns.useVYinShifts = false;
-    ns.jumpWithOffsetAlt = false;
-    ns.incIduringRegRW = false;
-    return ns;
-})();
+const registerDOMEvents = ({ ui, rom }) => {
+  for (const [k, v] of Object.entries({
+    ui,
+    rom,
+  })) {
+    if (!v) {
+      throw new Error(
+        `[error] ${k} not provided during Registering DOM events`
+      );
+    }
+  }
+  document.addEventListener("DOMContentLoaded", ui.init, { once: true });
+  document.addEventListener("DOMContentLoaded", rom.init, {
+    once: true,
+  });
+};
+
+export { registerDOMEvents };
