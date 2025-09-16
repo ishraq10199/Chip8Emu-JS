@@ -35,31 +35,49 @@ const getDisplayInstance = ({ getInstance }) => {
     ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   };
 
+  // TODO: Bring back previous draw implementation if this one causes issues
   ns.draw = (root_x, root_y, data) => {
-    // `root_x` and `root_y` coords must be "sanitized" beforehand
-    // `data` should be of type Uint8Array, and should contain N bytes, for N rows
-    let x = root_x;
-    let y = root_y;
+    // Draw sprite `data` starting at (root_x, root_y).
+    // Use wrapping on both axes and compute per-pixel collision.
+    // `data` is Uint8Array where each byte is 8 horizontal pixels.
     registers.V[0xf] = 0;
-    for (let i = 0; i < data.length; i++, y++) {
-      if (y >= SCREEN_HEIGHT) {
-        break;
-      }
-      const currentRow = ctx
-        .getImageData(x * SCALE_FACTOR, y * SCALE_FACTOR, 8 * SCALE_FACTOR, 1)
-        .data.filter((_, idx) => !(idx % (4 * SCALE_FACTOR)));
-      const toDraw = data[i];
-      let currentPixel = 0;
-      let toDrawBit = 0;
+
+    // Normalize start coords into 0..SCREEN_WIDTH-1, 0..SCREEN_HEIGHT-1
+    let baseX = ((root_x % SCREEN_WIDTH) + SCREEN_WIDTH) % SCREEN_WIDTH;
+    let baseY = ((root_y % SCREEN_HEIGHT) + SCREEN_HEIGHT) % SCREEN_HEIGHT;
+
+    for (let row = 0; row < data.length; row++) {
+      const y = (baseY + row) % SCREEN_HEIGHT;
+      const toDraw = data[row];
+
       for (let bit = 0; bit < 8; bit++) {
-        currentPixel = currentRow[bit] & 1;
-        toDrawBit = (toDraw >> (7 - bit)) & 1;
+        const drawX = (baseX + bit) % SCREEN_WIDTH;
+
+        // compute the bit to draw (1 or 0)
+        const toDrawBit = (toDraw >> (7 - bit)) & 1;
+
+        // Read the current pixel at drawX,y (one pixel)
+        // Note: reading single pixel so coordinates multiplied by SCALE_FACTOR
+        const img = ctx.getImageData(
+          drawX * SCALE_FACTOR,
+          y * SCALE_FACTOR,
+          1,
+          1
+        ).data;
+        // img is [r,g,b,a], when background is black and stroke white,
+        // treat any non-zero alpha or non-zero first channel as pixel on.
+        const currentPixel = img[0] ? 1 : 0;
+
+        // Collision detection: set VF if a pixel is erased (1 xor 1 => 0)
         if (currentPixel === 1 && toDrawBit === 1) {
           registers.V[0xf] = 1;
         }
+
         const resultPixel = currentPixel ^ toDrawBit;
+
+        // Paint the pixel. Use full pixel units (1x1) — canvas is scaled with SCALE_FACTOR elsewhere.
         ctx.fillStyle = resultPixel ? COLOR_STROKE : COLOR_BG;
-        ctx.fillRect(x + bit, y, 1, 1);
+        ctx.fillRect(drawX, y, 1, 1);
       }
     }
   };
