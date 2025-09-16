@@ -1,9 +1,16 @@
+let instance;
+
 const getTimerInstance = () => {
+  if (instance) {
+    return instance;
+  }
+
+  const ns = Object.create(null);
+  instance = ns;
+
   const DELAY = 0;
   const SOUND = 1;
   const timers = new Uint8ClampedArray(2);
-
-  const ns = Object.create(null);
 
   ns.setDelay = (value) => {
     timers[DELAY] = value;

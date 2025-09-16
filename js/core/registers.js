@@ -1,6 +1,11 @@
-const getRegistersInstance = () => {
-  const ns = Object.create(null);
+let instance;
 
+const getRegistersInstance = () => {
+  if (instance) {
+    return instance;
+  }
+  const ns = Object.create(null);
+  instance = ns;
   // general purpose registers v0 ~ vf
   ns.V = new Uint8Array(16);
   ns.I = 0;

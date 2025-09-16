@@ -19,6 +19,7 @@ const getCPUInstance = ({ getInstance }) => {
     const input = getInstance("input");
     const memory = getInstance("memory");
     const global = getInstance("global");
+    const memoryUtils = getInstance("memoryUtils");
 
     checkInstanceDependencies("cpu", {
       ui,
@@ -30,6 +31,7 @@ const getCPUInstance = ({ getInstance }) => {
       input,
       memory,
       global,
+      memoryUtils,
     });
 
     const fetched = new Uint8Array(2);
@@ -230,7 +232,7 @@ const getCPUInstance = ({ getInstance }) => {
 
     ns.operations.getKey = (register) => {
       const key = input.getLastFreshInput();
-      if (!key) {
+      if (key === false) {
         ns.PC -= 2;
         return;
       }
