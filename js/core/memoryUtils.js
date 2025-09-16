@@ -6,11 +6,12 @@ const getMemoryUtilsInstance = ({ getInstance }) => {
   if (instance) {
     return instance;
   }
+
+  const memory = getInstance("memory");
+
   checkInstanceDependencies("memoryUtils", {
     memory,
   });
-
-  const memory = getInstance("memory");
 
   const fontMap = new Array(16);
 
@@ -47,7 +48,7 @@ const getMemoryUtilsInstance = ({ getInstance }) => {
       if (currentCharCol === 0) {
         fontMap[currentCharRow] = i;
       }
-      chip8.memory[i] = bitmaps[currentCharRow][currentCharCol];
+      memory[i] = bitmaps[currentCharRow][currentCharCol];
 
       if (currentCharCol === 4) {
         currentCharCol = 0;

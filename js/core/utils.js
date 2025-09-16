@@ -6,6 +6,17 @@ const getUtilsInstance = ({ getInstance }) => {
   if (instance) {
     return instance;
   }
+
+  const memoryUtils = getInstance("memoryUtils");
+  const ui = getInstance("ui");
+  const cpu = getInstance("cpu");
+  const display = getInstance("display");
+  const input = getInstance("input");
+  const sound = getInstance("sound");
+  const timer = getInstance("timer");
+  const rom = getInstance("rom");
+  const global = getInstance("global");
+
   checkInstanceDependencies("utils", {
     memoryUtils,
     ui,
@@ -17,16 +28,6 @@ const getUtilsInstance = ({ getInstance }) => {
     rom,
     global,
   });
-
-  const memoryUtils = getInstance("memoryUtils");
-  const ui = getInstance("ui");
-  const cpu = getInstance("cpu");
-  const display = getInstance("display");
-  const input = getInstance("input");
-  const sound = getInstance("sound");
-  const timer = getInstance("timer");
-  const rom = getInstance("rom");
-  const global = getInstance("global");
 
   const ns = Object.create(null);
 

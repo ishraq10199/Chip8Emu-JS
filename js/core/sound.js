@@ -4,13 +4,14 @@ const getSoundInstance = ({ getInstance }) => {
   if (instance) {
     return instance;
   }
+
+  const timer = getInstance("timer");
+  const global = getInstance("global");
+
   checkInstanceDependencies("sound", {
     timer,
     global,
   });
-
-  const timer = getInstance("timer");
-  const global = getInstance("global");
 
   const ns = Object.create(null);
 
