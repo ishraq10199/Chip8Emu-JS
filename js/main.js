@@ -1,36 +1,99 @@
-import { createCPU } from "./modules/cpu.js";
-import { createDisplay } from "./modules/display.js";
-import { createGlobal } from "./modules/global.js";
+import { getCPUInstance } from "./core/cpu.js";
+import { getDisplayInstance } from "./core/display.js";
+import { getGlobalInstance } from "./core/global.js";
 
-import { registerDOMEvents } from "./modules/init.js";
-import { createInput } from "./modules/input.js";
-import { createMemory } from "./modules/memory.js";
-import { createMemoryUtils } from "./modules/memoryUtils.js";
-import { createRegisters } from "./modules/registers.js";
-import { createROM } from "./modules/rom.js";
-import { createSound } from "./modules/sound.js";
-import { createStack } from "./modules/stack.js";
-import { createTimer } from "./modules/timer.js";
-import { createUI } from "./modules/ui.js";
-import { createUtils } from "./modules/utils.js";
+import { registerDOMEvents } from "./core/init.js";
+import { getInputInstance } from "./core/input.js";
+import { getMemoryInstance } from "./core/memory.js";
+import { getMemoryUtilsInstance } from "./core/memoryUtils.js";
+import { getQuirksInstance } from "./core/quirks.js";
+import { getRegistersInstance } from "./core/registers.js";
+import { getROMInstance } from "./core/rom.js";
+import { getSoundInstance } from "./core/sound.js";
+import { getStackInstance } from "./core/stack.js";
+import { getTimerInstance } from "./core/timer.js";
+import { getUIInstance } from "./core/ui.js";
+import { getUtilsInstance } from "./core/utils.js";
+import { getInstanceProvider } from "./utils/depUtils.js";
 
-const global = createGlobal();
-const input = createInput();
-const timer = createTimer();
-const memory = createMemory();
-const registers = createRegisters();
+/**
+.@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@
+.@..........@@.........................@@@................................:.@...........#@.=.-.........@@.......@@
+.@....::...@@....:..::.............@@@@@@@@@@....-.*..:.....::.::::...:...@.@.:.:.:...:@@..:.=.+@+.*#@-:@..*==-.@@
+.@........@@...:.:.::........-::-.@@@@@...@@@#...+.%.:......::....::::....=+-....::...-%.....-.:@@@@#.#:@..*.:-.@@
+.@.......@@....-:::..........-:.-.@@........@@...*.@.::......:::::::.::........:......=@...+::..@...#@.-@..#:-=.@@
+.@......@@....::.............-:.-.@@@#.@@@@@@@@@.%.@..::..........:..:::.@@@...:......#.*-#=--:.@@@@@:.:@..%:...@@
+.@.....@@.....::....:::...::.:-.-.@@@@.@.@....@@.@.@..:...........:.:....@@@@....::..@#.:.=............*@..@....@@
+.@....@@.....::::..::.::.::..:-.:..@.%.@.@@@@@@-.+.@..:...........:.::..@@.@@@=...:.-@.**.-:.:-:...:...@@..@.+..@@
+.@...*@*...::::.....:::..:.:.--...@=*@.@.....+@@:..%..:...:.......:.::..@@..#@@@....%%....:..%-*#*.-==.@@..@.@..@@
+.@...@@..:.::............:.:.:=...*#@@.@.@.....#%..*...:::.:......:.:...@@@@..%@@@@@-..:.....*+..+.:...@@..@-#..@@
+.@..@@...:...::...............:.....@@.@*@.%@@@@*..=...:.:::......:..:..@@@@@@.%..@@...::::-:=.-*-.-::.%@..+....@@
+.@..@@...::...:..........:::.::.....@@.@.@.@@@.....-.:::::.:......:::::.....@@@@@@@#.-....:..*.=...:...@@..*-...@@
+.@..@@....-..:::.........:.::.....@@@@.@@@.@@@@@.....................:::.+.-.#@@.....+.=--.--:=-.::.::.@@..*:.:.@@
+.@.@.@@=..-....:.........::...-@@@@@@......@@@@@@@.......:::::..:::::....=.@..........=:.+....:::..:.-.#@..+-.:.@@
+.@.@:@%@..-..:.::......:-:..@@@@@@..-+:........+@@@@@........:.:..:.::...=@#:..=..:...+.%.+.::....:.:=.+@..+=:..@@
+.@..@..@....::..:....::--...@@@........:.::::.....@@@@@...:::...:::::...%@@..=.*..:...=.@.#.--.-::-.:*..@..-:=..@@
+.@.@@.@@@..:.:::.....::-...@@.+..@@..::.::.::..@@-...@@@.....::......:..@.@..=:+.::...................-*@...:*..@@
+.@.:.@..@=.....::.:.::::..@@.....@*@...-=:...:.@.@@.+.@@@...::::...:::..%@@....:.......=@@@@@-@@@@@@@..@@.:.-*..@@
+.@.@@+...@....:::...:.::..@@.....@.@@@....:..:.@.@:=..:@@..::.::...::...+........:..:..*#*@@@.@@@@@@@@.@@.-.:*..@@
+.@....:@.+@....::...::::...@@@=*.@@..@..:.:..:.@.@...@@@..::.:::...::...@@+#@=:..:..:..#@@..@.@.....@@.@@..-.*..@@
+.@+@#-.@@@@@:...::.::::-...+@@@....@@%.........@.@@@@@@.....:::....::...=%:..%...::......@@.*@.#..:.@@.%@..+.*..@@
+.@.........@@@...:.....::.....@@-..@@@@.@@@@@+.@+.@.@.....::::.....::::...@::@.:...:=+*-.@@..#.@....@%.-@..=:*..@@
+.@..@@@-.....@@:..::.:.:::-:..@@@@#...@.....@@.@.@..@...:....:.....::.....@..@.:::.-:....@@..*.*....@@.#@.:.-+..@@
+.@.#:.#.....:..-..::..:..::.:..@@@@@@#@.+@@@.@.@@@@@@..::.:::::....::.:...@..@...:::=**+.@@@@@.@@@@@@@.@@...=-..@@
+.@.....@@@@@@@@.....:.....:.-....@@..*.+@..@.@..@@.....:.:::::......:::...@:.@...........@...@......-@.@@...::..@@
+.@@@@@@@@-.....#.#=..::..::.::..@@.:.@:@@@.%@@..@@.-..::.:..:..:.........:@=.@.:::.::....@=-.@@*....@@.@@..-=+..@@
+.@........*@@@*.@:@...::..-:::..@@.....@.@@@....@@.+.....::::::...:::::..:@-.@...:......+%:@@@@@@@@@@..@#..+.@..@@
+.@..............@.@@...:..-.....@@....+@@@@.....@@.:.:::.::::.:::::......:@..@..:.:::-:.=@@@...........@%..*.@..@@
+.@..-=..........@#.@@...:.:....@@+%...@@..@@....@@............:...::::::.*+............................@@..-.+..@@
+.@..-::::..=@@%.@%..@@.........@@.*..+@@..@@..:.@@.@@@@@@@@#...........:.@..+@@@@@.@@@@@..%@@@@@=.=@@@+*@..*.%..@@
+.@.......:.:...+@....@-#@@@@@@.@@....@@=..@@....@@.-*#%%%%%@@%@@*=%@#-::.@+.@@@@@@.@@@@@.@@@=+@@..@@@@@@-..@.@..@@
+.@..=+=::.:+@@#.@@@@@@%%@@@@@%.@@....@@.*.@@....@@..........-#%%@#.......+=.@@..@@.@@.@@.*.-@@*-.@@...:-...@.@..@@
+.@....-.........%@@@@..........@@...@@@...@@@...@@...............--.=....@%.@@..@*.@@.@@.#@@...-+.=-...*#..@.@..@@
+.@.=++=:----:-.+=......::..:-.@@@@@@@@.%@%.@@@@@@@.%@@@@##@@@@@@--.+*....@..@@@@@*.@@@@@.-.-@@@+..-#+*==*=.@=@..@@
+.@.:--::------.:#@#.:..==+++=.@@@@@@@.......@@@@@+.@@*.@@@+....+-+*-..##.:#.@@@@...@@@@@........:@@-.==:.=:*#=..@@
+.@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@
 
-const memoryUtils = createMemoryUtils({ memory });
-const display = createDisplay({ registers });
-const sound = createSound({ global, timer });
-const utils = createUtils();
+ */
+// const global = getGlobalInstance();
+// const input = ();
+// const timer = createTimer();
+// const memory = createMemory();
+// const registers = createRegisters();
 
-// TODO: Fix cyclic dependency
-const cpu = createCPU();
-const ui = createUI({});
-const stack = createStack();
+// const memoryUtils = createMemoryUtils({ memory });
+// const display = createDisplay({ registers });
+// const sound = createSound({ global, timer });
+// const utils = createUtils();
 
-const rom = createROM();
+// // TODO: Fix cyclic dependency
+// const cpu = createCPU();
+// const ui = createUI({});
+// const stack = createStack();
+
+// const rom = createROM();
+
+const instanceProvider = getInstanceProvider();
+const instanceFns = {
+  cpu: getCPUInstance,
+  display: getDisplayInstance,
+  global: getGlobalInstance,
+  input: getInputInstance,
+  memory: getMemoryInstance,
+  memoryUtils: getMemoryUtilsInstance,
+  quirks: getQuirksInstance,
+  registers: getRegistersInstance,
+  rom: getROMInstance,
+  sound: getSoundInstance,
+  stack: getStackInstance,
+  timer: getTimerInstance,
+  ui: getUIInstance,
+  utils: getUtilsInstance,
+};
+
+for (const [k, v] of Object.entries(instanceFns)) {
+  instanceProvider.addInstance(k, v);
+}
 
 window.chip8 = Object.create(null);
-registerDOMEvents();
+registerDOMEvents(instanceProvider);

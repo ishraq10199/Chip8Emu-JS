@@ -1,16 +1,28 @@
-const createUI = ({ memory, cpu, registers, input, timer, global }) => {
-  for (const [k, v] of Object.entries({
+import { checkInstanceDependencies } from "../utils/depUtils.js";
+
+let instance;
+
+const getUIInstance = ({ getInstance }) => {
+  if (instance) {
+    return instance;
+  }
+
+  const memory = getInstance("memory");
+  const cpu = getInstance("cpu");
+  const registers = getInstance("registers");
+  const input = getInstance("input");
+  const timer = getInstance("timer");
+  const global = getInstance("global");
+
+  checkInstanceDependencies("ui", {
     memory,
     cpu,
     registers,
     input,
     timer,
     global,
-  })) {
-    if (!v) {
-      throw new Error(`[error] ${k} not provided during UI instancing`);
-    }
-  }
+  });
+
   const ns = Object.create(null);
 
   const codeContainer = document.querySelector("#chip8code .content");
@@ -296,7 +308,9 @@ const createUI = ({ memory, cpu, registers, input, timer, global }) => {
     verboseInstructionContainer.innerHTML = content.join(" ");
   };
 
+  instance = ns;
+
   return ns;
 };
 
-export { createUI };
+export { getUIInstance };

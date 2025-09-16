@@ -1,17 +1,12 @@
-const { chip8 } = window;
+import { checkInstanceDependencies } from "../utils/depUtils.js";
 
-const createUtils = ({
-  memoryUtils,
-  ui,
-  cpu,
-  display,
-  input,
-  sound,
-  timer,
-  rom,
-  global,
-}) => {
-  for (const [k, v] of Object.entries({
+let instance;
+
+const getUtilsInstance = ({ getInstance }) => {
+  if (instance) {
+    return instance;
+  }
+  checkInstanceDependencies("utils", {
     memoryUtils,
     ui,
     cpu,
@@ -21,11 +16,18 @@ const createUtils = ({
     timer,
     rom,
     global,
-  })) {
-    if (!v) {
-      throw new Error(`[error] ${k} not provided during Utils instancing`);
-    }
-  }
+  });
+
+  const memoryUtils = getInstance("memoryUtils");
+  const ui = getInstance("ui");
+  const cpu = getInstance("cpu");
+  const display = getInstance("display");
+  const input = getInstance("input");
+  const sound = getInstance("sound");
+  const timer = getInstance("timer");
+  const rom = getInstance("rom");
+  const global = getInstance("global");
+
   const ns = Object.create(null);
 
   ns.mainLoopFrame = null;
@@ -105,7 +107,9 @@ const createUtils = ({
     ns.mainLoopFrame = requestAnimationFrame(mainLoop);
   };
 
+  instance = ns;
+
   return ns;
 };
 
-export { createUtils };
+export { getUtilsInstance };

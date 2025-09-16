@@ -1,13 +1,17 @@
-const createMemoryUtils = ({ memory }) => {
-  for (const [k, v] of Object.entries({
-    memory,
-  })) {
-    if (!v) {
-      throw new Error(
-        `[error] ${k} not provided during MemoryUtils instancing`
-      );
-    }
+import { checkInstanceDependencies } from "../utils/depUtils.js";
+
+let instance;
+
+const getMemoryUtilsInstance = ({ getInstance }) => {
+  if (instance) {
+    return instance;
   }
+  checkInstanceDependencies("memoryUtils", {
+    memory,
+  });
+
+  const memory = getInstance("memory");
+
   const fontMap = new Array(16);
 
   // @todo Program Counter, Index register operations here
@@ -54,7 +58,10 @@ const createMemoryUtils = ({ memory }) => {
     }
   };
   ns.fontMap = fontMap;
+
+  instance = ns;
+
   return ns;
 };
 
-export { createMemoryUtils };
+export { getMemoryUtilsInstance };

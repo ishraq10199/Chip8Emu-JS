@@ -1,6 +1,9 @@
-const { chip8 } = window;
+let instance;
 
-const createInput = () => {
+const getInputInstance = () => {
+  if (instance) {
+    return instance;
+  }
   const keys = new Uint8Array(16);
   const keyMap = new Array(16);
   const mapKey = Object.create(null);
@@ -72,7 +75,9 @@ const createInput = () => {
 
   ns.keyList = keyList;
 
+  instance = ns;
+
   return ns;
 };
 
-export { createInput };
+export { getInputInstance };

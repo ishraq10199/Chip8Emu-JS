@@ -1,14 +1,22 @@
-const createCPU = ({
-  timer,
-  stack,
-  display,
-  registers,
-  quirks,
-  input,
-  memory,
-  global,
-}) => {
-  for (const [k, v] of Object.entries({
+import { checkInstanceDependencies } from "../utils/depUtils.js";
+
+let instance;
+
+const getCPUInstance = ({ getInstance }) => {
+  if (instance) {
+    return instance;
+  }
+
+  const timer = getInstance("timer");
+  const stack = getInstance("stack");
+  const display = getInstance("display");
+  const registers = getInstance("registers");
+  const quirks = getInstance("quirks");
+  const input = getInstance("input");
+  const memory = getInstance("memory");
+  const global = getInstance("global");
+
+  checkInstanceDependencies("cpu", {
     timer,
     stack,
     display,
@@ -17,13 +25,10 @@ const createCPU = ({
     input,
     memory,
     global,
-  })) {
-    if (!v) {
-      throw new Error(`[error] ${k} not provided during CPU instancing`);
-    }
-  }
+  });
 
   const ns = Object.create(null);
+
   const fetched = new Uint8Array(2);
   ns.PC = 0;
   ns.operations = Object.create(null);
@@ -527,7 +532,9 @@ const createCPU = ({
 
   ns.stepCount = 0;
 
+  instance = ns;
+
   return ns;
 };
 
-export { createCPU };
+export { getCPUInstance };

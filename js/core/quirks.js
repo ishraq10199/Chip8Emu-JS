@@ -1,5 +1,5 @@
 // TODO: adjust quirks and test further
-const createQuirks = () => {
+const getQuirksInstance = () => {
   const ns = Object.create(null);
   ns.useVYinShifts = false;
   ns.jumpWithOffsetAlt = false;
@@ -7,4 +7,4 @@ const createQuirks = () => {
   return ns;
 };
 
-export { createQuirks };
+export { getQuirksInstance };

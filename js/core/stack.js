@@ -1,13 +1,18 @@
-const { chip8 } = window;
+import { checkInstanceDependencies } from "../utils/depUtils.js";
 
-const createStack = ({ ui }) => {
-  for (const [k, v] of Object.entries({
-    ui,
-  })) {
-    if (!v) {
-      throw new Error(`[error] ${k} not provided during Stack instancing`);
-    }
+let instance;
+
+const getStackInstance = ({ getInstance }) => {
+  if (instance) {
+    return instance;
   }
+
+  const ui = getInstance("ui");
+
+  checkInstanceDependencies("stack", {
+    ui,
+  });
+
   const _stack = [];
   const ns = Object.create(null);
   ns.push = (item) => {
@@ -23,7 +28,10 @@ const createStack = ({ ui }) => {
   };
   ns.top = () => _stack.length && _stack[_stack.length - 1];
   ns.get = () => _stack;
+
+  instance = ns;
+
   return ns;
 };
 
-export { createStack };
+export { getStackInstance };

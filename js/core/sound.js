@@ -1,12 +1,17 @@
-const createSound = ({ timer, global }) => {
-  for (const [k, v] of Object.entries({
+import { checkInstanceDependencies } from "../utils/depUtils.js";
+let instance;
+const getSoundInstance = ({ getInstance }) => {
+  if (instance) {
+    return instance;
+  }
+  checkInstanceDependencies("sound", {
     timer,
     global,
-  })) {
-    if (!v) {
-      throw new Error(`[error] ${k} not provided during Sound instancing`);
-    }
-  }
+  });
+
+  const timer = getInstance("timer");
+  const global = getInstance("global");
+
   const ns = Object.create(null);
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -56,7 +61,9 @@ const createSound = ({ timer, global }) => {
 
   ns.play = () => {};
 
+  instance = ns;
+
   return ns;
 };
 
-export { createSound };
+export { getSoundInstance };

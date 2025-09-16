@@ -1,17 +1,25 @@
-const { chip8 } = window;
+import { checkInstanceDependencies } from "../utils/depUtils.js";
 
-const createROM = ({ utils, cpu, memory, ui, global }) => {
-  for (const [k, v] of Object.entries({
+let instance;
+
+const getROMInstance = ({ getInstance }) => {
+  if (instance) {
+    return instance;
+  }
+  checkInstanceDependencies("rom", {
     utils,
     cpu,
     memory,
     ui,
     global,
-  })) {
-    if (!v) {
-      throw new Error(`[error] ${k} not provided during ROMReader instancing`);
-    }
-  }
+  });
+
+  const utils = getInstance("utils");
+  const cpu = getInstance("cpu");
+  const memory = getInstance("memory");
+  const ui = getInstance("ui");
+  const global = getInstance("global");
+
   const ns = Object.create(null);
 
   const romdata = Object.create(null);
@@ -74,7 +82,8 @@ const createROM = ({ utils, cpu, memory, ui, global }) => {
       pauseButton.innerHTML = global.paused ? "Resume" : "Pause";
     });
   };
+  instance = ns;
   return ns;
 };
 
-export { createROM };
+export { getROMInstance };

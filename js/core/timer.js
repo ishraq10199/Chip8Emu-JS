@@ -1,6 +1,4 @@
-const { chip8 } = window;
-
-const createTimer = () => {
+const getTimerInstance = () => {
   const DELAY = 0;
   const SOUND = 1;
   const timers = new Uint8ClampedArray(2);
@@ -31,4 +29,4 @@ const createTimer = () => {
   return ns;
 };
 
-export { createTimer };
+export { getTimerInstance };

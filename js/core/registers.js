@@ -1,6 +1,4 @@
-const { chip8 } = window;
-
-const createRegisters = () => {
+const getRegistersInstance = () => {
   const ns = Object.create(null);
 
   // general purpose registers v0 ~ vf
@@ -9,4 +7,4 @@ const createRegisters = () => {
   return ns;
 };
 
-export { createRegisters };
+export { getRegistersInstance };

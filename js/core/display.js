@@ -1,11 +1,18 @@
-const createDisplay = ({ registers }) => {
-  for (const [k, v] of Object.entries({
-    registers,
-  })) {
-    if (!v) {
-      throw new Error(`[error] ${k} not provided during Display instancing`);
-    }
+import { checkInstanceDependencies } from "../utils/depUtils.js";
+
+let instance;
+
+const getDisplayInstance = ({ getInstance }) => {
+  if (instance) {
+    return instance;
   }
+
+  const registers = getInstance("registers");
+
+  checkInstanceDependencies("display", {
+    registers,
+  });
+
   const displayEl = document.querySelector("#chip8display");
   const canvas = displayEl.querySelector("canvas");
   const ctx = canvas.getContext("2d");
@@ -61,7 +68,9 @@ const createDisplay = ({ registers }) => {
   ns.SCREEN_HEIGHT = SCREEN_HEIGHT;
   ns.ctx = ctx;
 
+  instance = ns;
+
   return ns;
 };
 
-export { createDisplay };
+export { getDisplayInstance };
