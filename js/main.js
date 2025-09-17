@@ -1,7 +1,6 @@
 import { getCPUInstance } from "./core/cpu.js";
 import { getDisplayInstance } from "./core/display.js";
 import { getGlobalInstance } from "./core/global.js";
-
 import { registerDOMEvents } from "./core/init.js";
 import { getInputInstance } from "./core/input.js";
 import { getMemoryInstance } from "./core/memory.js";
@@ -16,7 +15,7 @@ import { getUIInstance } from "./core/ui.js";
 import { getUtilsInstance } from "./core/utils.js";
 import { getInstanceProvider } from "./utils/depUtils.js";
 
-/**
+/*
 .@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@
 .@..........@@.........................@@@................................:.@...........#@.=.-.........@@.......@@
 .@....::...@@....:..::.............@@@@@@@@@@....-.*..:.....::.::::...:...@.@.:.:.:...:@@..:.=.+@+.*#@-:@..*==-.@@
@@ -55,25 +54,9 @@ import { getInstanceProvider } from "./utils/depUtils.js";
 .@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@
 
  */
-// const global = getGlobalInstance();
-// const input = ();
-// const timer = createTimer();
-// const memory = createMemory();
-// const registers = createRegisters();
-
-// const memoryUtils = createMemoryUtils({ memory });
-// const display = createDisplay({ registers });
-// const sound = createSound({ global, timer });
-// const utils = createUtils();
-
-// // TODO: Fix cyclic dependency
-// const cpu = createCPU();
-// const ui = createUI({});
-// const stack = createStack();
-
-// const rom = createROM();
 
 const instanceProvider = getInstanceProvider();
+
 const instanceFns = {
   cpu: getCPUInstance,
   display: getDisplayInstance,
@@ -95,5 +78,4 @@ for (const [k, v] of Object.entries(instanceFns)) {
   instanceProvider.addInstance(k, v);
 }
 
-window.chip8 = Object.create(null);
 registerDOMEvents(instanceProvider);

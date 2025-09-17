@@ -1,5 +1,4 @@
-const getInstanceProvider = () => {
-  /*
+/*
 .@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@
 .@...............+#@@@*..................-@=....=.%..%.%..@%%=-:..=%%=@##............@.-@@@@@*..................@@
 .@...............+#@@@*..................-@=....=.%..%.%..@%%=-:..=%%=@##............@.-@@@@@*..................@@
@@ -38,16 +37,14 @@ const getInstanceProvider = () => {
 .@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@@#@@
 */
 
+const getInstanceProvider = () => {
   const ns = Object.create(null);
   const instanceFns = Object.create(null);
 
+  ns.getInstance = (moduleName) => instanceFns[moduleName]();
   ns.addInstance = (moduleName, instanceFn) => {
     instanceFns[moduleName] = instanceFn.bind(null, ns);
   };
-
-  ns.getInstance = (moduleName) => instanceFns[moduleName]();
-
-  ns.instanceFns = instanceFns;
 
   return ns;
 };

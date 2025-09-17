@@ -1,5 +1,7 @@
 import { checkInstanceDependencies } from "../utils/depUtils.js";
+
 let instance;
+
 const getSoundInstance = ({ getInstance }) => {
   if (instance) {
     return instance;
