@@ -5,9 +5,13 @@ const getGlobalInstance = () => {
     return instance;
   }
   const ns = Object.create(null);
-  ns.paused = false;
-  ns.debug = !!localStorage.getItem("debug") || false;
   instance = ns;
+
+  (async () => {
+    ns.paused = false;
+    ns.debug = !!localStorage.getItem("debug") || false;
+  })();
+
   return ns;
 };
 

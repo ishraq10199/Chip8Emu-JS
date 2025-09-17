@@ -6,9 +6,13 @@ const getRegistersInstance = () => {
   }
   const ns = Object.create(null);
   instance = ns;
-  // general purpose registers v0 ~ vf
-  ns.V = new Uint8Array(16);
-  ns.I = 0;
+
+  (async () => {
+    // general purpose registers v0 ~ vf
+    ns.V = new Uint8Array(16);
+    ns.I = 0;
+  })();
+
   return ns;
 };
 

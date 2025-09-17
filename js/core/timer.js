@@ -8,30 +8,32 @@ const getTimerInstance = () => {
   const ns = Object.create(null);
   instance = ns;
 
-  const DELAY = 0;
-  const SOUND = 1;
-  const timers = new Uint8ClampedArray(2);
+  (async () => {
+    const DELAY = 0;
+    const SOUND = 1;
+    const timers = new Uint8ClampedArray(2);
 
-  ns.setDelay = (value) => {
-    timers[DELAY] = value;
-  };
+    ns.setDelay = (value) => {
+      timers[DELAY] = value;
+    };
 
-  ns.getDelay = () => timers[DELAY];
+    ns.getDelay = () => timers[DELAY];
 
-  ns.setSound = (value) => {
-    timers[SOUND] = value;
-  };
+    ns.setSound = (value) => {
+      timers[SOUND] = value;
+    };
 
-  ns.getSound = () => timers[SOUND];
+    ns.getSound = () => timers[SOUND];
 
-  ns.decrement = () => {
-    if (timers[DELAY]) {
-      timers[DELAY]--;
-    }
-    if (timers[SOUND]) {
-      timers[SOUND]--;
-    }
-  };
+    ns.decrement = () => {
+      if (timers[DELAY]) {
+        timers[DELAY]--;
+      }
+      if (timers[SOUND]) {
+        timers[SOUND]--;
+      }
+    };
+  })();
 
   return ns;
 };

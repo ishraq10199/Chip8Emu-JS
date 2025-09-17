@@ -14,17 +14,19 @@ const getQuirksInstance = () => {
   const ns = Object.create(null);
   instance = ns;
 
-  // "!Shifting"
-  ns.useVYinShifts = false;
-  // Jumping
-  ns.jumpWithOffsetAlt = false;
-  // Memory
-  ns.incIduringRegRW = true;
+  (async () => {
+    // "!Shifting"
+    ns.useVYinShifts = false;
+    // Jumping
+    ns.jumpWithOffsetAlt = false;
+    // Memory
+    ns.incIduringRegRW = true;
 
-  // Quirks not implemented/default behavior is fixed:
-  //  - Disp.wait
-  //  - Clipping
-  //  - VF Reset
+    // Quirks not implemented/default behavior is fixed:
+    //  - Disp.wait
+    //  - Clipping
+    //  - VF Reset
+  })();
 
   return ns;
 };
