@@ -9,6 +9,9 @@ const getCPUInstance = ({ getInstance }) => {
   const ns = Object.create(null);
   instance = ns;
 
+  /**
+   * Load the instance's internal methods and properties asynchronously
+   */
   (async () => {
     const ui = getInstance("ui");
     const timer = getInstance("timer");

@@ -7,6 +7,9 @@ const getRegistersInstance = () => {
   const ns = Object.create(null);
   instance = ns;
 
+  /**
+   * Load the instance's internal methods and properties asynchronously
+   */
   (async () => {
     // general purpose registers v0 ~ vf
     ns.V = new Uint8Array(16);
