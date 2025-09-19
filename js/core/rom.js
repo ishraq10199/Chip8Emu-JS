@@ -37,6 +37,10 @@ const getROMInstance = ({ getInstance }) => {
     const romdata = Object.create(null);
     ns.romdata = romdata;
 
+    /**
+     * Loads the ROM data into memory, starting from addres 0x200
+     * Also renders the UI for memory visualization
+     */
     ns.load = () => {
       if (!romdata.bytes || !romdata.bytes.length) {
         console.info("Could not load ROM - have you uploaded + read one?");
@@ -53,6 +57,9 @@ const getROMInstance = ({ getInstance }) => {
       ui.renderMemory(16);
     };
 
+    /**
+     * Initializes the DOM elements related to the ROM reader UI and their event listeners
+     */
     ns.init = () => {
       const input = document.querySelector("input#romupload");
       const readButton = document.querySelector("button#readrom");

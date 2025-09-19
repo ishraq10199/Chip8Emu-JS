@@ -48,6 +48,9 @@ const getCPUInstance = ({ getInstance }) => {
     ns.PC = 0;
     ns.operations = Object.create(null);
 
+    /**
+     * Initial state of the CPU, at the start of each ROM launch
+     */
     ns.init = () => {
       for (let i = 0; i < registers.V.length; i++) {
         registers.V[i] = 0;
