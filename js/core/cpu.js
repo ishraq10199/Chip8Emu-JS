@@ -44,8 +44,13 @@ const getCPUInstance = ({ getInstance }) => {
       memoryUtils,
     });
 
+    // Contains the currently fetched instruction (pre-decode)
     const fetched = new Uint8Array(2);
+
+    // Program Counter
     ns.PC = 0;
+
+    // Contains functions for every CPU instruction
     ns.operations = Object.create(null);
 
     /**
@@ -61,32 +66,39 @@ const getCPUInstance = ({ getInstance }) => {
       ns.PC = Number(0x200);
     };
 
+    // Chip8 operation - Clears the display
     ns.operations.clearScreen = () => {
       display.clear();
     };
 
+    // Chip8 operation - Immediate jump (changes PC only)
     ns.operations.jump = (address) => {
       ns.PC = address;
     };
 
+    // Chip8 operation - Set a register value directly
     ns.operations.setRegVal = (register, value) => {
       registers.V[register] = value;
     };
 
+    // Chip8 operation - Set a register's value to the value in another register
     ns.operations.setRegReg = (registerX, registerY) => {
       registers.V[registerX] = registers.V[registerY];
     };
 
+    // Chip8 operation - Adds immediate value to the value inside a register WITHOUT carry
     ns.operations.addWithoutCarry = (register, value) => {
       registers.V[register] += value;
     };
 
+    // Chip8 operation - Adds immediate value to the value inside a register WITH carry
     ns.operations.addWithCarry = (registerX, registerY) => {
       const sum = registers.V[registerX] + registers.V[registerY];
       registers.V[registerX] = sum;
       registers.V[0xf] = (sum > 255) & 1;
     };
 
+    // Chip8 operation - Subtract the value in the first register from the value in the second register, reverse if `negate` is set
     ns.operations.subtract = (registerX, registerY, negate = false) => {
       const difference =
         (registers.V[registerX] - registers.V[registerY]) * (negate ? -1 : 1);
@@ -94,22 +106,27 @@ const getCPUInstance = ({ getInstance }) => {
       registers.V[0xf] = (difference >= 0) & 1;
     };
 
+    // Chip8 operation - Binary OR between the values in two registers
     ns.operations.binOR = (registerX, registerY) => {
       registers.V[registerX] |= registers.V[registerY];
     };
 
+    // Chip8 operation - Binary AND between the values in two registers
     ns.operations.binAND = (registerX, registerY) => {
       registers.V[registerX] &= registers.V[registerY];
     };
 
+    // Chip8 operation - Binary XOR between the values in two registers
     ns.operations.binXOR = (registerX, registerY) => {
       registers.V[registerX] ^= registers.V[registerY];
     };
 
+    // Chip8 operation - Set index register (I) to a value
     ns.operations.setIndex = (value) => {
       registers.I = value;
     };
 
+    // Chip8 operation - Draw a sprite on the screen at position (`x`, `y`), consisting of `n` rows of pixels
     ns.operations.draw = (x, y, n) => {
       const idx = registers.I;
       const { SCREEN_WIDTH: w, SCREEN_HEIGHT: h } = display;
@@ -119,39 +136,47 @@ const getCPUInstance = ({ getInstance }) => {
       display.draw(root_x % w, root_y % h, spriteData);
     };
 
+    // Chip8 operation - Pushes the current PC to stack and sets the PC to the new address
     ns.operations.callSubroutine = (address) => {
       stack.push(ns.PC);
       ns.PC = address;
     };
 
+    // Chip8 operation - Pops the last item from the stack and assigns it to PC
     ns.operations.returnFromSubroutine = () => {
       ns.PC = stack.pop();
     };
 
+    // Chip8 operation - Skip next instruction if value inside register contains given value
     ns.operations.skipEqualVal = (register, value) => {
       if (registers.V[register] === value) {
         ns.PC += 2;
       }
     };
 
+    // Chip8 operation - Skip next instruction if value inside register DOES NOT contain given value
     ns.operations.skipNotEqualVal = (register, value) => {
       if (registers.V[register] !== value) {
         ns.PC += 2;
       }
     };
 
+    // Chip8 operation - Skip next instruction if both registers have the equal value
     ns.operations.skipEqualReg = (registerX, registerY) => {
       if (registers.V[registerX] === registers.V[registerY]) {
         ns.PC += 2;
       }
     };
 
+    // Chip8 operation - Skip next instruction if both registers DO NOT have the equal value
     ns.operations.skipNotEqualReg = (registerX, registerY) => {
       if (registers.V[registerX] !== registers.V[registerY]) {
         ns.PC += 2;
       }
     };
 
+    // [Quirk is involved with this operation - see `useVYinShifts`]
+    // Chip8 operation - Shifts value in the first register by "n" bits to the right where the second register has the value "n"
     ns.operations.shiftRight = (registerX, registerY) => {
       if (quirks.useVYinShifts) {
         registers.V[registerX] = registers.V[registerY];
@@ -161,6 +186,8 @@ const getCPUInstance = ({ getInstance }) => {
       registers.V[0xf] = shiftedOut;
     };
 
+    // [Quirk is involved with this operation - see `useVYinShifts`]
+    // Chip8 operation - Shifts value in the first register by "n" bits to the left where the second register has the value "n"
     ns.operations.shiftLeft = (registerX, registerY) => {
       if (quirks.useVYinShifts) {
         registers.V[registerX] = registers.V[registerY];
@@ -170,27 +197,33 @@ const getCPUInstance = ({ getInstance }) => {
       registers.V[0xf] = shiftedOut;
     };
 
+    // Chip8 operation - Jumps to the computed location, i.e. `address` + the value inside the register
     ns.operations.jumpWithOffset = (address, register) => {
       // Jumps to NNN + V[0]
       ns.PC = address + registers.V[register || 0];
     };
 
+    // Chip8 operation - Generates a random 8 bit number, which undergoes a bitwise AND with the given value
     ns.operations.generateRandomNumber = (register, value) => {
       registers.V[register] = Math.floor(Math.random() * 256) & value;
     };
 
+    // Chip8 operation - Read the delay timer
     ns.operations.readDelayTimer = (register) => {
       registers.V[register] = timer.getDelay();
     };
 
+    // Chip8 operation - Writes to the delay timer
     ns.operations.writeDelayTimer = (register) => {
       timer.setDelay(registers.V[register]);
     };
 
+    // Chip8 operation - Writes to the sound timer
     ns.operations.writeSoundTimer = (register) => {
       timer.setSound(registers.V[register]);
     };
 
+    // Chip8 operation - Adds register value to the index register (I)
     ns.operations.addToIndex = (register) => {
       const nextAddress = registers.I + registers.V[register];
       registers.I = nextAddress;
@@ -200,11 +233,13 @@ const getCPUInstance = ({ getInstance }) => {
       }
     };
 
+    // Chip8 operation - Points the index register (I) to the location in memory where the font sprite for the character (in the register value's hex notation) is stored
     ns.operations.fontCharacter = (register) => {
       const hexCode = registers.V[register] & 0xf;
       registers.I = memoryUtils.fontMap[hexCode];
     };
 
+    // Chip8 operation - Converts the value in the register to BCD (Binary coded decimal)
     ns.operations.bcdConvert = (register) => {
       const num = registers.V[register];
       const digits = [100, 10, 1].map((div) => Math.floor(num / div) % 10);
@@ -213,6 +248,8 @@ const getCPUInstance = ({ getInstance }) => {
       }
     };
 
+    // [Quirk is involved with this operation - see `incIduringRegRW`]
+    // Chip8 operation - Stores all the current register values in the address which the index register (I) points to
     ns.operations.storeRegisters = (registerLimit) => {
       for (let offset = 0; offset <= registerLimit; offset++) {
         memory[registers.I + offset] = registers.V[offset];
@@ -222,6 +259,8 @@ const getCPUInstance = ({ getInstance }) => {
       }
     };
 
+    // [Quirk is involved with this operation - see `incIduringRegRW`]
+    // Chip8 operation - Restores all the current register values from the address which the index register (I) points to
     ns.operations.loadRegisters = (registerLimit) => {
       for (let offset = 0; offset <= registerLimit; offset++) {
         registers.V[offset] = memory[registers.I + offset];
@@ -231,18 +270,21 @@ const getCPUInstance = ({ getInstance }) => {
       }
     };
 
+    // Chip8 operation - Skip next instruction if key mentioned in the register value is pressed
     ns.operations.skipIfKeyPressed = (register) => {
       if (input.isKeyPressed(registers.V[register])) {
         ns.PC += 2;
       }
     };
 
+    // Chip8 operation - Skip next instruction if key mentioned in the register value is NOT pressed
     ns.operations.skipIfKeyNotPressed = (register) => {
       if (!input.isKeyPressed(registers.V[register])) {
         ns.PC += 2;
       }
     };
 
+    // Chip8 operation - Gets the last "fresh" key input and writes its keycode into the specified register
     ns.operations.getKey = (register) => {
       const key = input.getLastFreshInput();
       if (key === false) {
@@ -252,6 +294,7 @@ const getCPUInstance = ({ getInstance }) => {
       registers.V[register] = key;
     };
 
+    // CPU - FETCH
     ns.fetch = () => {
       // Read 2 bytes, and increment the PC by 2
       fetched[0] = memory[ns.PC];
@@ -263,6 +306,7 @@ const getCPUInstance = ({ getInstance }) => {
       return fetched.toHex();
     };
 
+    // CPU - DECODE
     ns.decode = (instruction) => {
       const X = Number(`0x${instruction[1]}`);
       const Y = Number(`0x${instruction[2]}`);
@@ -270,6 +314,7 @@ const getCPUInstance = ({ getInstance }) => {
       const NN = Number(`0x${instruction.slice(2)}`);
       const NNN = Number(`0x${instruction.slice(1)}`);
 
+      // Fallback operation if opcode does not match any implemented operation
       const defaultOp = () => {
         console.error("Unimplemented instruction - ", instruction);
       };
@@ -534,18 +579,21 @@ const getCPUInstance = ({ getInstance }) => {
       return op;
     };
 
+    // CPU - EXECUTE
     ns.execute = (operation) => {
       if (typeof operation === "function") {
         operation();
       }
     };
 
+    // A single [Fetch->Decode->Execute] cycle is performed on each `tick`
     ns.tick = () => {
       const fetchedInstruction = ns.fetch();
       const decodedOperation = ns.decode(fetchedInstruction);
       ns.execute(decodedOperation);
     };
 
+    // Corresponds to how many instructions the debugger will step through in the step-debugger
     ns.stepCount = 0;
   })();
 
