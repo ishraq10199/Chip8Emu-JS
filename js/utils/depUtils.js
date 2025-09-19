@@ -1,4 +1,6 @@
 /**
+ * Returns a new instance provider, an Object that has the necessary utility functions
+ * that can store, add and retrieve singleton instances of each module.
  *
  * @returns instanceProvider - An object that can add and retrieve module instances
  */
