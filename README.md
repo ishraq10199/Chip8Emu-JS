@@ -2,7 +2,7 @@
 
 A simple Chip8 emulator/interpreter written in vanilla JS.
 
-- Runs on the browser, accessible [here](https://ishraq10199.github.io/Chip8Emu-JS)👈
+- Runs on the browser, accessible [here](https://ishraq10199.github.io/chip8-emulator)👈
 - Debugging UI inspired by [this X post](https://x.com/kraptor/status/1153936421209509888)
 - Used Tobias's [excellent Chip8 emulation guide](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/) as reference
 - No external dependencies and libraries used
